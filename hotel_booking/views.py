@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, logout, authenticate
 from django.shortcuts import render, redirect
 from hotel_booking.forms import SignUpForm
 
@@ -20,4 +20,8 @@ def signup(request):
             return redirect('index')
     else:
         form = SignUpForm()
-    return render(request, 'hotel_booking/signup.html', {'form': form})
+    return render(request, 'registration/signup.html', {'form': form})
+
+def logout_view(request):
+    logout(request)
+    return redirect('index')
