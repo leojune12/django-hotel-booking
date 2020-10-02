@@ -16,6 +16,9 @@ class RoomType(models.Model):
     description = models.CharField(max_length=100)
     rate = models.FloatField()
 
+    def __str__(self):
+        return self.type
+
 class Room(models.Model):
     room_type = models.ForeignKey(
         RoomType,
@@ -25,8 +28,17 @@ class Room(models.Model):
     )
     number = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.number
+
+    def rate(self):
+        return self.room_type.rate
+
 class BookingStatus(models.Model):
     status = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.status
 
 class Booking(models.Model):
     rooms = models.ManyToManyField(Room)
@@ -47,6 +59,15 @@ class Booking(models.Model):
     persons = models.IntegerField()
     created_at = models.DateTimeField()
 
+    def __str__(self):
+        return "Booking from " + self.check_in.__str__() + " to " + self.check_out.__str__() + " by " + self.user.first_name + " " + self.user.last_name
+
+    def description(self):
+        return "Booking from " + self.check_in.__str__() + " to " + self.check_out.__str__() + " by " + self.user.first_name + " " + self.user.last_name
+
+    def rooms_included(self):
+        return list(self.rooms.all())
+
 class Payment(models.Model):
     booking = models.OneToOneField(
         Booking,
@@ -58,8 +79,14 @@ class Payment(models.Model):
     address = models.CharField(max_length=100)
     amount = models.FloatField()
 
+    def __str__(self):
+        return "Payment for '" + self.booking.__str__() + "'"
+
 class CardType(models.Model):
     type = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.type
 
 class Card(models.Model):
     payment = models.OneToOneField(
@@ -75,3 +102,6 @@ class Card(models.Model):
     holder = models.CharField(max_length=100)
     number = models.CharField(max_length=100)
     expiry_date = models.DateField()
+
+    def __str__(self):
+        return "Card for '" + self.payment.__str__() + "'"
