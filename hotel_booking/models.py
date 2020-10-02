@@ -48,6 +48,10 @@ class Booking(models.Model):
         null=True,
         on_delete=models.SET_NULL
     )
+    reference_number = models.CharField(
+        max_length=8,
+        default="00000000"
+    )
     booking_status = models.ForeignKey(
         BookingStatus,
         blank=True,
@@ -60,7 +64,7 @@ class Booking(models.Model):
     created_at = models.DateTimeField()
 
     def __str__(self):
-        return "Booking from " + self.check_in.__str__() + " to " + self.check_out.__str__() + " by " + self.user.first_name + " " + self.user.last_name
+        return self.reference_number
 
     def description(self):
         return "Booking from " + self.check_in.__str__() + " to " + self.check_out.__str__() + " by " + self.user.first_name + " " + self.user.last_name
@@ -69,6 +73,10 @@ class Booking(models.Model):
         return list(self.rooms.all())
 
 class Payment(models.Model):
+    transaction_number = models.CharField(
+        max_length=8,
+        default="00000000"
+    )
     booking = models.OneToOneField(
         Booking,
         on_delete=models.CASCADE

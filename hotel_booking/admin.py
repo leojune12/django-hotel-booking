@@ -31,15 +31,17 @@ class CardInLine(admin.StackedInline):
     model = Card
 
 class PaymentAdmin(admin.ModelAdmin):
-    fields = ['booking', 'first_name', 'last_name', 'email', 'address', 'amount']
+    fields = ['transaction_number', 'booking', 'first_name', 'last_name', 'email', 'address', 'amount']
+    list_display = ('transaction_number', 'booking', 'first_name', 'last_name', 'email', 'address', 'amount')
     inlines = [CardInLine]
 
 class BookingStatusAdmin(admin.ModelAdmin):
     fields = ['status']
+    list_display = ('id', 'status')
 
 class BookingAdmin(admin.ModelAdmin):
-    fields = ['user', 'booking_status', 'check_in', 'check_out', 'persons', 'created_at', 'rooms']
-    list_display = ('description', 'user', 'check_in', 'check_out', 'persons', 'booking_status', 'created_at', 'rooms_included')
+    fields = ['reference_number', 'user', 'booking_status', 'check_in', 'check_out', 'persons', 'created_at', 'rooms']
+    list_display = ('reference_number', 'user', 'check_in', 'check_out', 'persons', 'booking_status', 'created_at', 'rooms_included')
 
 admin.site.register(Hotel, HotelAdmin)
 admin.site.register(RoomType, RoomTypeAdmin)
