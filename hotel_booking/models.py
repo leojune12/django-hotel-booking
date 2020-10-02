@@ -8,6 +8,9 @@ class Hotel(models.Model):
     description = models.CharField(max_length=100)
     address = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.name
+
 class RoomType(models.Model):
     type = models.CharField(max_length=100)
     description = models.CharField(max_length=100)

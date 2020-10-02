@@ -18,8 +18,10 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.0/moment.min.js" integrity="sha512-Izh34nqeeR7/nwthfeE0SI3c8uhFSnqxV0sI9TvTcXiFJkMd6fB644O64BRq2P/LA/+7eRvCw4GmLsXksyTHBg==" crossorigin="anonymous"></script>
+
     <style>
-        input {
+        p input {
             width: 100%;
             padding: 12px 20px;
             margin: 8px 0;
@@ -42,6 +44,66 @@
 
 </head>
 <body>
-    {% block contents %}{% endblock %}
+    <div id="app">
+        <v-app style="visibility: hidden" :class="{visible:show}">
+            <v-app-bar
+                app
+                color="indigo darken-4"
+                dark
+            >
+
+                <v-toolbar-title>
+                    <a href="/hotel-booking" class="text-white">FebeHotel&trade;</a>
+                </v-toolbar-title>
+
+                <v-spacer></v-spacer>
+
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'signup' %}" class="text-white pa-2">
+                        Signup
+                    </a>
+                    <a href="{% url 'login' %}" class="text-white pa-2">
+                        Login
+                    </a>
+                {% else %}
+                    <v-menu
+                      left
+                      bottom
+                      :offset-y="true"
+                    >
+                        <template v-slot:activator="{ on, attrs }">
+                            <a
+                                href="javascript:void(0)"
+                                v-bind="attrs"
+                                v-on="on"
+                                class="text-white pa-2"
+                            >
+                                {{ user }}
+                                <v-icon>mdi-account-circle</v-icon>
+                            </a>
+                        </template>
+                        <v-list
+                            class="pa-0"
+                        >
+                            <v-list-item
+                                href="{% url 'logout' %}"
+                            >
+                                <v-list-item-title>
+                                    <v-icon>mdi-logout</v-icon>
+                                    Logout
+                                </v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                    </v-menu>
+                {% endif %}
+            </v-app-bar>
+            <v-main>
+                <v-container>
+                    {% block contents %}{% endblock %}
+                </v-container>
+            </v-main>
+        </v-app>
+    </div>
+    {% block script %}{% endblock %}
 </body>
 </html>

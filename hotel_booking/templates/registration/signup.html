@@ -1,43 +1,35 @@
 {% extends "hotel_booking/base.html" %}
 
 {% block contents %}
-    <div id="app" style="visibility: hidden" :class="{visible:show}">
-    <v-app>
-        <v-main>
-            <v-container
-                class="px-15"
-            >
-                <v-card
-                    class="mx-auto"
-                    max-width="400"
-                    outlined
-                >
-                    <v-card-title>
-                        Create Account
-                    </v-card-title>
-                    <v-card-text>
-                        <form method="post">
-                            {% csrf_token %}
-                            {% for field in form %}
-                              <p>
-                                {{ field.label_tag }}<br>
-                                {{ field }}
-                                {% if field.help_text %}
-                                  <small style="color: grey">{{ field.help_text }}</small>
-                                {% endif %}
-                                {% for error in field.errors %}
-                                  <p style="color: red">{{ error }}</p>
-                                {% endfor %}
-                              </p>
-                            {% endfor %}
-                            <v-btn type="submit" color="primary">Signup</v-btn>
-                        </form>
-                    </v-card-text>
-                </v-card>
-            </v-container>
-        </v-main>
-    </v-app>
-    </div>
+    <v-card
+        class="mx-auto"
+        max-width="400"
+        outlined
+    >
+        <v-card-title>
+            Create Account
+        </v-card-title>
+        <v-card-text>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                  <p>
+                    {{ field.label_tag }}<br>
+                    {{ field }}
+                    {% if field.help_text %}
+                      <small style="color: grey">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                      <p style="color: red">{{ error }}</p>
+                    {% endfor %}
+                  </p>
+                {% endfor %}
+                <v-btn type="submit" color="primary">Signup</v-btn>
+            </form>
+        </v-card-text>
+    </v-card>
+{% endblock %}
+{% block script %}
     <script>
         new Vue({
           el: '#app',

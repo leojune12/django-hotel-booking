@@ -4,9 +4,12 @@ from django.shortcuts import render, redirect
 from hotel_booking.forms import SignUpForm
 
 # Create your views here.
+from hotel_booking.models import Hotel
+
 
 def index(request):
-    return render(request, 'hotel_booking/index.html', {})
+    hotel = Hotel.objects.get(id=1)
+    return render(request, 'hotel_booking/index.html', {'hotel': hotel})
 
 def signup(request):
     if request.method == 'POST':
