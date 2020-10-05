@@ -1,0 +1,32 @@
+{% extends 'hotel_booking/base.html' %}
+
+{% block contents %}
+    List of bookings
+{% endblock %}
+{% block script %}
+    <script>
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        delimiters: [
+            '[[',
+            ']]',
+        ],
+        data: {
+            show: false,
+        },
+
+        computed: {
+
+        },
+
+        mounted() {
+              this.show = true
+        },
+
+        methods: {
+
+        },
+    })
+    </script>
+{% endblock %}

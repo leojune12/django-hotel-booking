@@ -19,6 +19,8 @@ class RoomType(models.Model):
     def __str__(self):
         return self.type
 
+    
+
 class Room(models.Model):
     room_type = models.ForeignKey(
         RoomType,
@@ -72,6 +74,9 @@ class Booking(models.Model):
     def rooms_included(self):
         return list(self.rooms.all())
 
+class PaymentStatus(models.Model):
+    status = models.CharField(max_length=100)
+
 class Payment(models.Model):
     transaction_number = models.CharField(
         max_length=8,
@@ -80,6 +85,12 @@ class Payment(models.Model):
     booking = models.OneToOneField(
         Booking,
         on_delete=models.CASCADE
+    )
+    status =  models.ForeignKey(
+        PaymentStatus,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL
     )
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)

@@ -1,0 +1,225 @@
+{% extends 'hotel_booking/base.html' %}
+{% load static %}
+
+{% block contents %}
+    <v-row>
+        <v-col
+            cols="12"
+            md="4"
+        >
+            <div class="text-h3">
+                {{ hotel }}
+            </div>
+            <div class="text-subtitle-1">
+                {{ hotel.description }}
+            </div>
+            <div class="text-subtitle-2">
+                <v-icon>mdi-map-marker</v-icon>
+                {{ hotel.address }}
+            </div>
+            <v-form
+                ref="form"
+                v-model="valid"
+                action="{% url 'search' %}"
+                id="form"
+                method="get"
+            >
+                <v-card
+                    class="mt-10"
+                    elevation="5"
+                >
+                    <v-card-title>
+                        Check Availability
+                    </v-card-title>
+                    <v-card-text
+                        class="py-0"
+                    >
+                        <v-dialog
+                            ref="check_in_dialog"
+                            v-model="check_in_modal"
+                            :return-value.sync="check_in_date"
+                            persistent
+                            width="290px"
+                        >
+                            <template v-slot:activator="{ on, attrs }">
+                            <v-text-field
+                              v-model="check_in_date"
+                              label="Check-in date"
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
+                              outlined
+                              name="check_in_date"
+                              hide-details
+                              class="mb-4"
+                              :rules="requiredRules"
+                              required
+                            ></v-text-field>
+                            </template>
+                            <v-date-picker
+                                v-model="check_in_date"
+                                scrollable
+                                :min="today"
+                            >
+                                <v-spacer></v-spacer>
+                                <v-btn
+                                  text
+                                  color="primary"
+                                  @click="check_in_modal = false"
+                                >
+                                  Cancel
+                                </v-btn>
+                                <v-btn
+                                  text
+                                  color="primary"
+                                  @click="$refs.check_in_dialog.save(check_in_date)"
+                                >
+                                  OK
+                                </v-btn>
+                            </v-date-picker>
+                        </v-dialog>
+                        <v-dialog
+                            ref="check_out_dialog"
+                            v-model="check_out_modal"
+                            :return-value.sync="check_out_date"
+                            persistent
+                            width="290px"
+                        >
+                            <template v-slot:activator="{ on, attrs }">
+                            <v-text-field
+                              v-model="check_out_date"
+                              label="Check-out date"
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
+                              outlined
+                              name="check_out_date"
+                              hide-details
+                              :disabled="is_disabled"
+                              :rules="requiredRules"
+                              required
+                            ></v-text-field>
+                            </template>
+                            <v-date-picker
+                                v-model="check_out_date"
+                                scrollable
+                                :min="added_one_day"
+                            >
+                                <v-spacer></v-spacer>
+                                <v-btn
+                                  text
+                                  color="primary"
+                                  @click="check_out_modal = false"
+                                >
+                                  Cancel
+                                </v-btn>
+                                <v-btn
+                                  text
+                                  color="primary"
+                                  @click="$refs.check_out_dialog.save(check_out_date)"
+                                >
+                                  OK
+                                </v-btn>
+                            </v-date-picker>
+                        </v-dialog>
+                    </v-card-text>
+                    <v-card-actions
+                        class="pa-4"
+                    >
+                        <v-btn
+                            block
+                            color="yellow darken-2"
+                            x-large
+                            @click="validate"
+                        >
+                            Check
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-form>
+        </v-col>
+        <v-col
+            cols="12"
+            md="8"
+        >
+            <v-carousel
+                cycle
+                hide-delimiters
+                show-arrows-on-hover
+            >
+                <v-carousel-item
+                    v-for="(image,i) in images"
+                    :key="i"
+                    {% comment %}:src="'{% static 'hotel_booking/images/' %}'+image.src"{% endcomment %}
+                    reverse-transition="fade-transition"
+                    transition="fade-transition"
+                >
+                    <v-img
+                        :src="'{% static 'hotel_booking/images/' %}'+image.src"
+                        max-height="400"
+                        contain
+                    ></v-img>
+                </v-carousel-item>
+            </v-carousel>
+        </v-col>
+    </v-row>
+{% endblock %}
+{% block script %}
+    <script>
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        delimiters: [
+            '[[',
+            ']]',
+        ],
+        data: {
+            show: false,
+            images: [
+                {src: 'image1.jpg'},
+                {src: 'image2.jpg'},
+                {src: 'image3.jpg'},
+                {src: 'image4.jpg'},
+                {src: 'image5.jpg'},
+                {src: 'image6.jpg'},
+            ],
+            today: moment().format('YYYY-MM-DD'),
+            check_in_date: null,
+            check_out_date: null,
+            check_in_modal: false,
+            check_out_modal: false,
+            valid: true,
+            requiredRules: [
+                v => !!v || 'This field is required',
+            ],
+        },
+
+        computed: {
+            is_disabled() {
+                if (this.check_in_date != null) {
+                    return false
+                } else {
+                    return true
+                }
+            },
+            added_one_day() {
+                return moment(this.check_in_date).add(1, 'day').format('YYYY-MM-DD')
+            }
+        },
+
+        mounted() {
+              this.show = true
+        },
+
+        methods: {
+            validate () {
+                if (this.$refs.form.validate()) {
+                    document.getElementById('form').submit()
+                }
+            },
+        },
+    })
+    </script>
+{% endblock %}

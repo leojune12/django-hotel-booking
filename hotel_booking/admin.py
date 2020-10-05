@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 
-from .models import Hotel, RoomType, Room, CardType, Card, Payment, BookingStatus, Booking
+from .models import Hotel, RoomType, Room, CardType, Card, Payment, PaymentStatus, BookingStatus, Booking
 
 class HotelAdmin(admin.ModelAdmin):
     fields = ['name', 'description', 'address']
@@ -14,7 +14,7 @@ class RoomInLine(admin.StackedInline):
 
 class RoomTypeAdmin(admin.ModelAdmin):
     fields = ['type', 'description', 'rate']
-    list_display = ('type', 'description', 'rate')
+    list_display = ('id', 'type', 'description', 'rate')
     inlines = [RoomInLine]
 
 class RoomAdmin(admin.ModelAdmin):
@@ -35,6 +35,10 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ('transaction_number', 'booking', 'first_name', 'last_name', 'email', 'address', 'amount')
     inlines = [CardInLine]
 
+class PaymentStatusAdmin(admin.ModelAdmin):
+    fields = ['status']
+    list_display = ('id', 'status')
+
 class BookingStatusAdmin(admin.ModelAdmin):
     fields = ['status']
     list_display = ('id', 'status')
@@ -49,5 +53,6 @@ admin.site.register(Room, RoomAdmin)
 admin.site.register(CardType, CardTypeAdmin)
 admin.site.register(Card, CardAdmin)
 admin.site.register(Payment, PaymentAdmin)
+admin.site.register(PaymentStatus, PaymentStatusAdmin)
 admin.site.register(BookingStatus, BookingStatusAdmin)
 admin.site.register(Booking, BookingAdmin)

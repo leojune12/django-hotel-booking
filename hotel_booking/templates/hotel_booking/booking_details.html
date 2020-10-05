@@ -1,0 +1,306 @@
+{% extends 'hotel_booking/base.html' %}
+
+{% block contents %}
+    <v-row>
+        <v-col
+            cols="12"
+            md="4"
+        >
+            <div class="text-h3">
+                {{ hotel }}
+            </div>
+            <div class="text-subtitle-1">
+                {{ hotel.description }}
+            </div>
+            <div class="text-subtitle-2">
+                <v-icon>mdi-map-marker</v-icon>
+                {{ hotel.address }}
+            </div>
+            <v-card class="mt-10">
+                <v-card-title  style="background-color: #C5CAE9">
+                    Your booking details
+                </v-card-title>
+                <v-card-text>
+                    <v-row class="d-flex">
+                        <v-col
+                            cols="6"
+                        >
+                            <div class="">
+                            <div class="text-subtitle-2">
+                                Check-in
+                            </div>
+                            <div class="text-subtitle-1 font-weight-bold">
+                                [[ check_in_date ]]
+                            </div>
+                        </div>
+                        </v-col>
+                        <v-col
+                            cols="6"
+                        >
+                            <div>
+                            <div class="text-subtitle-2">
+                                Check-out
+                            </div>
+                            <div class="text-subtitle-1 font-weight-bold">
+                                [[ check_out_date ]]
+                            </div>
+                        </div>
+                        </v-col>
+                    </v-row>
+                    <v-row>
+                        <v-col cols="12" class="pt-0">
+                            <div class="text-subtitle-2">
+                                Total length of stay:
+                            </div>
+                            <div class="text-subtitle-1 font-weight-bold">
+                                [[ number_of_nights ]] night<div v-if="number_of_nights > 1" class="d-inline">s</div>
+                            </div>
+                        </v-col>
+                    </v-row>
+                    <v-divider></v-divider>
+                    <v-row>
+                        <v-col cols="12">
+                            <div class="text-subtitle-2">
+                                You selected:
+                            </div>
+                            <div class="text-subtitle-1 font-weight-bold" v-for="selectedRoomType in selectedRoomTypes">
+                                [[ selectedRoomType.selected_rooms ]] x [[ selectedRoomType.type ]]<div class="d-inline" v-if="selectedRoomType.selected_rooms > 1">s</div>
+                            </div>
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+            </v-card>
+
+            <v-card class="mt-10">
+                <v-card-title style="background-color: #C5CAE9">
+                    Your price summary
+                </v-card-title>
+                <v-card-text>
+                    <div class="text-subtitle-1 font-weight-bold pt-4">
+                        [[ total_rooms ]] room<div class="d-inline" v-if="total_rooms > 1">s</div> for &#8369;[[ total_payment ]]
+                    </div>
+                </v-card-text>
+            </v-card>
+        </v-col>
+        <v-col
+            cols="12"
+            md="8"
+        >
+            <v-card class="mt-10">
+                <v-card-title style="background-color: #BBDEFB">
+                    Enter your details
+                </v-card-title>
+                <v-form
+                    ref="form"
+                    v-model="valid"
+                    lazy-validation
+                    id="form"
+                    action="{% url 'my-bookings' %}"
+                    method="post"
+                >
+                    {% csrf_token %}
+                    <v-card-text>
+                        <v-row>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <v-text-field
+                                    required
+                                    label="First Name"
+                                    :rules="requiredRules"
+                                    value="{{ user.first_name }}"
+                                    name="first_name"
+                                ></v-text-field>
+                            </v-col>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <v-text-field
+                                    required
+                                    label="Last Name"
+                                    :rules="requiredRules"
+                                    value="{{ user.last_name }}"
+                                    name="last_name"
+                                ></v-text-field>
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <v-text-field
+                                    required
+                                    label="Address"
+                                    :rules="requiredRules"
+                                    name="address"
+                                ></v-text-field>
+                            </v-col>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <v-text-field
+                                    required
+                                    label="Email"
+                                    :rules="requiredRules"
+                                    value="{{ user.email }}"
+                                    name="email"
+                                ></v-text-field>
+                            </v-col>
+                        </v-row>
+                        <v-divider></v-divider>
+                        <v-row>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <v-text-field
+                                    required
+                                    label="Card Holder's Name"
+                                    :rules="requiredRules"
+                                    value="{{ user.first_name }} {{ user.last_name }}"
+                                    name="card_holder_name"
+                                ></v-text-field>
+                            </v-col>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <label for="" class="mb-0" id="card_type_label">Card Type</label>
+                                <select class="form-control form-control-sm" id="card_type" name="card_type" required>
+                                    <option value="0">Select Card</option>
+                                    <option v-for="type in cardTypes" :key="type.id" value="type.id">[[ type.type ]]</option>
+                                </select>
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <v-text-field
+                                    required
+                                    label="Card Number"
+                                    :rules="requiredRules"
+                                    name="card_number"
+                                ></v-text-field>
+                            </v-col>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <label for="" class="mb-0" id="expiry_date_label">Expiry Date</label>
+                                <div class="d-flex">
+                                    <select class="form-control form-control-sm mr-3" id="expiry_month" name="expiry_month" required>
+                                        <option value="0">Month</option>
+                                        <option value="1">January</option>
+                                        <option value="2">February</option>
+                                        <option value="3">March</option>
+                                        <option value="4">April</option>
+                                        <option value="5">May</option>
+                                        <option value="6">June</option>
+                                        <option value="7">July</option>
+                                        <option value="8">August</option>
+                                        <option value="9">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <select class="form-control form-control-sm" id="expiry_year" name="expiry_year" required>
+                                        <option value="0">Year</option>
+                                        <option v-for="n in 31" :value="[[ 2019 + n ]]">[[ 2019 + n ]]</option>
+                                    </select>
+                                </div>
+                            </v-col>
+                        </v-row>
+                    </v-card-text>
+                    <v-card-actions class="px-4">
+                        <v-spacer></v-spacer>
+                        <v-btn x-large color="green darken-1" class="mb-3 px-12" dark :block="!$vuetify.breakpoint.mdAndUp" @click="validate">Confirm Booking</v-btn>
+                    </v-card-actions>
+                    <input type="hidden" name="check_in_date" :value="check_in_date">
+                    <input type="hidden" name="check_out_date" :value="check_out_date">
+                    <input type="hidden" name="selected_room_types" :value="selectedRoomTypes">
+                </v-form>
+            </v-card>
+        </v-col>
+    </v-row>
+{% endblock %}
+
+{% block script %}
+    <script>
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        delimiters: [
+            '[[',
+            ']]',
+        ],
+        data: {
+            show: false,
+            check_in_date: "{{ check_in }}",
+            check_out_date: "{{ check_out }}",
+            number_of_nights: "{{ number_of_nights }}",
+            selectedRoomTypes: [
+                {% for room_type in room_types %}
+                    {{ room_type|safe }},
+                {% endfor %}
+
+            ],
+            cardTypes: [
+                {% for card_type in card_types %}
+                    {{ card_type|safe }},
+                {% endfor %}
+
+            ],
+            requiredRules: [
+                v => !!v || 'This field is required',
+            ],
+            valid: true,
+        },
+
+        computed: {
+            total_payment() {
+                let total = 0
+                for (type of this.selectedRoomTypes) {
+                    total += type.selected_rooms * type.rate * this.number_of_nights
+                }
+                return total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            },
+
+            total_rooms() {
+                let rooms = 0
+                for (type of this.selectedRoomTypes) {
+                    rooms += type.selected_rooms
+                }
+                return rooms
+            }
+        },
+
+        mounted() {
+              this.show = true
+        },
+
+        methods: {
+            validate () {
+                if (this.$refs.form.validate()) {
+                    document.getElementById('card_type_label').classList.remove("text-danger")
+                    document.getElementById('expiry_date_label').classList.remove("text-danger")
+                    if (document.getElementById('card_type').value === "0") {
+                        document.getElementById('card_type_label').classList.add("text-danger")
+                    } else if (document.getElementById('expiry_month').value === "0"){
+                        document.getElementById('expiry_date_label').classList.add("text-danger")
+                    } else if (document.getElementById('expiry_year').value === "0") {
+                        document.getElementById('expiry_date_label').classList.add("text-danger")
+                    } else {
+                        document.getElementById('form').submit()
+                    }
+                }
+            },
+        },
+    })
+    </script>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends 'hotel_booking/base.html' %}
+{% load static %}
+
+{% block contents %}
+    <v-row>
+        <v-col
+            cols="12"
+            md="4"
+        >
+            <div class="text-h3">
+                {{ hotel }}
+            </div>
+            <div class="text-subtitle-1">
+                {{ hotel.description }}
+            </div>
+            <div class="text-subtitle-2">
+                <v-icon>mdi-map-marker</v-icon>
+                {{ hotel.address }}
+            </div>
+            <v-form
+                ref="form"
+                v-model="valid"
+                action="{% url 'search' %}"
+                id="form"
+                method="get"
+            >
+                <v-card
+                    class="mt-10"
+                    elevation="5"
+                >
+                    <v-card-title>
+                        Check Availability
+                    </v-card-title>
+                    <v-card-text
+                        class="py-0"
+                    >
+                        <v-dialog
+                            ref="check_in_dialog"
+                            v-model="check_in_modal"
+                            :return-value.sync="check_in_date"
+                            persistent
+                            width="290px"
+                        >
+                            <template v-slot:activator="{ on, attrs }">
+                            <v-text-field
+                              v-model="check_in_date"
+                              label="Check-in date"
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
+                              outlined
+                              name="check_in_date"
+                              hide-details
+                              class="mb-4"
+                              :rules="requiredRules"
+                              required
+                            ></v-text-field>
+                            </template>
+                            <v-date-picker
+                                v-model="check_in_date"
+                                scrollable
+                                :min="today"
+                            >
+                                <v-spacer></v-spacer>
+                                <v-btn
+                                  text
+                                  color="primary"
+                                  @click="check_in_modal = false"
+                                >
+                                  Cancel
+                                </v-btn>
+                                <v-btn
+                                  text
+                                  color="primary"
+                                  @click="$refs.check_in_dialog.save(check_in_date)"
+                                >
+                                  OK
+                                </v-btn>
+                            </v-date-picker>
+                        </v-dialog>
+                        <v-dialog
+                            ref="check_out_dialog"
+                            v-model="check_out_modal"
+                            :return-value.sync="check_out_date"
+                            persistent
+                            width="290px"
+                        >
+                            <template v-slot:activator="{ on, attrs }">
+                            <v-text-field
+                              v-model="check_out_date"
+                              label="Check-out date"
+                              prepend-inner-icon="mdi-calendar"
+                              readonly
+                              v-bind="attrs"
+                              v-on="on"
+                              outlined
+                              name="check_out_date"
+                              hide-details
+                              :disabled="is_disabled"
+                              :rules="requiredRules"
+                              required
+                            ></v-text-field>
+                            </template>
+                            <v-date-picker
+                                v-model="check_out_date"
+                                scrollable
+                                :min="added_one_day"
+                            >
+                                <v-spacer></v-spacer>
+                                <v-btn
+                                  text
+                                  color="primary"
+                                  @click="check_out_modal = false"
+                                >
+                                  Cancel
+                                </v-btn>
+                                <v-btn
+                                  text
+                                  color="primary"
+                                  @click="$refs.check_out_dialog.save(check_out_date)"
+                                >
+                                  OK
+                                </v-btn>
+                            </v-date-picker>
+                        </v-dialog>
+                        <div class="text-subtitle-1 px-3 pt-3 text-dark">
+                            {{ number_of_nights }}-night stay
+                        </div>
+                    </v-card-text>
+                    <v-card-actions
+                        class="pa-4"
+                    >
+                        <v-btn
+                            block
+                            color="yellow darken-2"
+                            x-large
+                            @click="validate"
+                            dark
+                        >
+                            Check
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-form>
+        </v-col>
+        <v-col
+            cols="12"
+            md="8"
+            class="pt-10"
+        >
+            <v-card>
+                <v-card-title>
+                    Available Rooms
+                </v-card-title>
+                <v-card-text>
+                    <v-simple-table class="border">
+                        <template v-slot:default>
+                            <thead style="background-color: #C5CAE9">
+                                <tr>
+                                    <th class="text-left text-dark">
+                                      Room Type
+                                    </th>
+                                    <th class="text-left text-dark">
+                                      Description
+                                    </th>
+                                    <th class="text-left text-dark">
+                                        Price for {{ number_of_nights }} nights
+                                    </th>
+                                    <th class="text-left text-dark">
+                                        Select Rooms
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(type, index) in availableRoomTypes" :key="type.id" v-if="type.available_rooms">
+                                    <td>[[ type.type ]]</td>
+                                    <td>[[ type.description ]]</td>
+                                    <td>&#8369; [[ type.rate * numberOfNights]]</td>
+                                    <td>
+                                        <select name="" class="form-control form-control-sm" v-model="type.selected_rooms">
+                                            <option :value="i" v-for="(n, i) in type.available_rooms+1">[[ i ]]</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </template>
+                    </v-simple-table>
+                    <v-card-actions class="d-flex flex-md-row flex-column px-0">
+                        <ul class="text-success mr-5 my-3 my-0" style="list-style-type: none">
+                            <li class=""><v-icon color="green">mdi-check</v-icon>Free Cancellation</li>
+                            <li class=""><v-icon color="green">mdi-check</v-icon>No booking or credit card fees!</li>
+                        </ul>
+                        <v-spacer></v-spacer>
+                        <div class="text-dark mr-5 my-3" v-if="selected_room_count">
+                            <div class="text-subtitle-1">[[ selected_room_count ]] room<div class="d-inline" v-if="selected_room_count > 1">s</div> for</div>
+                            <div class="text-h5 text-nowrap">&#8369; [[ total_payment ]]</div>
+                        </div>
+                        <v-form
+                            method="post"
+                            action="{% url 'book' %}"
+                            v-if="selected_room_count"
+                        >
+                            {% csrf_token %}
+                            <input type="hidden" name="check_in_date" :value="check_in_date">
+                            <input type="hidden" name="check_out_date" :value="check_out_date">
+                            <input type="hidden" name="room_type_ids" :value="hidden_values_ids">
+                            <input type="hidden" name="selected_room_type_counts" :value="hidden_values_counts">
+                            <v-btn x-large color="green darken-1" class="my-3 px-15" dark :block="!$vuetify.breakpoint.mdAndUp" type="submit">Book Now</v-btn>
+                        </v-form>
+                    </v-card-actions>
+                </v-card-text>
+            </v-card>
+        </v-col>
+    </v-row>
+{% endblock %}
+{% block script %}
+    <script>
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        delimiters: [
+            '[[',
+            ']]',
+        ],
+        data: {
+            show: false,
+            today: moment().format('YYYY-MM-DD'),
+            check_in_date: "{{ check_in }}",
+            check_out_date: "{{ check_out }}",
+            check_in_modal: false,
+            check_out_modal: false,
+            valid: true,
+            requiredRules: [
+                v => !!v || 'This field is required',
+            ],
+            availableRoomTypes: [
+                {% for available_room_type in available_room_types %}
+                    {{ available_room_type|safe }},
+                {% endfor %}
+            ],
+            numberOfNights: {{ number_of_nights }},
+            hiddenValues: {
+                roomTypeIds: "",
+                selectedRoomTypeCount: "",
+            }
+        },
+
+        computed: {
+            is_disabled() {
+                if (this.check_in_date != null) {
+                    return false
+                } else {
+                    return true
+                }
+            },
+
+            added_one_day() {
+                return moment(this.check_in_date).add(1, 'day').format('YYYY-MM-DD')
+            },
+
+            total_payment() {
+                let total = 0
+                for (type of this.availableRoomTypes) {
+                    total += type.selected_rooms * type.rate * this.numberOfNights
+                }
+                return total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            },
+
+            selected_room_count() {
+                let count = 0
+                for (type of this.availableRoomTypes) {
+                    count += type.selected_rooms
+                }
+                return count
+            },
+
+            hidden_values_ids() {
+                let ids = "";
+                this.availableRoomTypes.forEach(function (value, index, array) {
+                    if (index === array.length-1) {
+                        ids += value.id
+                    } else {
+                        ids += value.id + ','
+                    }
+                })
+                return ids
+            },
+
+            hidden_values_counts() {
+                let counts = ""
+                this.availableRoomTypes.map(function (value, index, array) {
+                    if (index === array.length-1) {
+                        counts += value.selected_rooms
+                    } else {
+                        counts += value.selected_rooms + ","
+                    }
+                })
+                return counts
+            },
+        },
+
+        mounted() {
+            this.show = true
+        },
+
+        methods: {
+            validate () {
+                if (this.$refs.form.validate()) {
+                    document.getElementById('form').submit()
+                }
+            },
+        },
+    })
+    </script>
+{% endblock %}
