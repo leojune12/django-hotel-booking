@@ -1,7 +1,106 @@
 {% extends 'hotel_booking/base.html' %}
 
 {% block contents %}
-    List of bookings
+{#    <v-alert#}
+{#        type="success"#}
+{#        dismissible#}
+{#    >#}
+{#        I'm a success alert.#}
+{#    </v-alert>#}
+
+    <v-card>
+        <v-card-title>
+            Bookings list
+        </v-card-title>
+        <v-card-text>
+            <v-simple-table>
+                <template v-slot:default>
+                    <thead>
+                        <tr>
+                            <th class="text-left">
+                                Reference Number
+                            </th>
+                            <th class="text-left">
+                                Check-in
+                            </th>
+                            <th class="text-left">
+                                Check-out
+                            </th>
+                            <th class="text-left">
+                                Persons
+                            </th>
+                            <th class="text-left">
+                                Rooms Included
+                            </th>
+                            <th colspan="text-left">
+                                Amount
+                            </th>
+                            <th class="text-left">
+                                Created
+                            </th>
+                            <th class="text-left">
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings_lists %}
+                            <tr>
+                                <td class="text-nowrap">{{ booking.reference_number }}</td>
+                                <td class="text-nowrap">{{ booking.check_in }}</td>
+                                <td class="text-nowrap">{{ booking.check_out }}</td>
+                                <td class="text-nowrap">{{ booking.persons }}</td>
+                                <td class="text-nowrap">
+                                    {% for room_type in booking.rooms_included %}
+                                        <div class="d-block py-1">{{ room_type }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td class="text-nowrap">&#8369; [[ format_amount({{ booking.total_amount }}) ]]</td>
+                            <td class="text-nowrap">{{ booking.created_at }}</td>
+                                <td class="text-nowrap">
+                                    {% if  booking.booking_status_id == 1 %}
+                                        <v-chip
+                                            class="ma-0"
+                                            color="primary"
+                                        >
+                                            {{ booking.booking_status }}
+                                        </v-chip>
+                                    {% elif booking.booking_status_id == 2 %}
+                                        <v-chip
+                                            class="text-white ma-0"
+                                            color="red"
+                                        >
+                                            {{ booking.booking_status }}
+                                        </v-chip>
+                                    {% elif booking.booking_status_id == 3 %}
+                                        <v-chip
+                                            class="ma-0"
+                                            color="green"
+                                        >
+                                            {{ booking.booking_status }}
+                                        </v-chip>
+                                    {% elif booking.booking_status_id == 4 %}
+                                        <v-chip
+                                            class="ma-0"
+                                            color="green"
+                                        >
+                                            {{ booking.booking_status }}
+                                        </v-chip>
+                                    {% else %}
+                                        <v-chip
+                                            class="ma-0"
+                                        >
+                                            {{ booking.booking_status }}
+                                        </v-chip>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </template>
+            </v-simple-table>
+        </v-card-text>
+    </v-card>
 {% endblock %}
 {% block script %}
     <script>
@@ -14,6 +113,12 @@
         ],
         data: {
             show: false,
+            bookings: [
+{#                {% for booking in bookings %}#}
+{#                    {{ booking|safe }},#}
+{#                {% endfor %}#}
+
+            ]
         },
 
         computed: {
@@ -25,7 +130,9 @@
         },
 
         methods: {
-
+            format_amount(amount) {
+                return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            }
         },
     })
     </script>

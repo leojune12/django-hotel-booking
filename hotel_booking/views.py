@@ -1,12 +1,13 @@
 from django.contrib.auth import login, logout, authenticate
 from django.shortcuts import render, redirect
 from hotel_booking.forms import SignUpForm
-
-from hotel_booking.models import Hotel, Booking, Room, RoomType, CardType
+from django.contrib.auth.decorators import login_required
+from hotel_booking.models import Hotel, Booking, BookingStatus, Room, RoomType, CardType, Payment, Card
 
 import json
-from django.contrib.auth.decorators import login_required
 from datetime import date
+from django.db.models import Q
+import datetime
 import string
 import random
 
@@ -48,8 +49,8 @@ def search_available_rooms(request):
     # storage for id's of occupied rooms
     occupied_room_ids = []
 
-    # get bookings within the range of chek-in and check-out dates
-    active_bookings = Booking.objects.filter(check_in__range=(check_in_date, check_out_date)) | Booking.objects.filter(check_out__range=(check_in_date, check_out_date)).values()
+    # get bookings that are within the range of check-in and check-out dates AND booking status id is 1 or 3
+    active_bookings = Booking.objects.filter((Q(check_in__range=(check_in_date, check_out_date)) | Q(check_out__range=(check_in_date, check_out_date))) & Q(booking_status_id__in=[1, 3]))
 
     # get all rooms included in active_bookings
     for active_booking in active_bookings:
@@ -92,9 +93,9 @@ def book_guest(request):
     index = 0
     for count in selected_room_type_counts.split(","):
         if int(count) > 0:
-            type = RoomType.objects.filter(pk=room_type_ids.split(",")[index]).values()[0]
-            type['selected_rooms'] = int(count)
-            room_types.append(type)
+            room_type = RoomType.objects.filter(pk=room_type_ids.split(",")[index]).values()[0]
+            room_type['selected_rooms'] = int(count)
+            room_types.append(room_type)
         index += 1
 
     # get total number of nights
@@ -105,38 +106,143 @@ def book_guest(request):
         'check_in': check_in_date,
         'check_out': check_out_date,
         'number_of_nights': number_of_nights.days,
-        'room_type_ids': room_type_ids.split(","),
-        'selected_room_type_counts': selected_room_type_counts.split(","),
         'room_types': room_types,
         'card_types': card_types,
     })
 
 @login_required
-def bookings_list(request):
-    # first_name = request.POST['first_name']
-    # last_name = request.POST['last_name']
-    # address = request.POST['address']
-    # email = request.POST['email']
-    # card_holder_name = request.POST['card_holder_name']
-    # card_type = request.POST['card_type']
-    # card_number = request.POST['card_number']
-    # expiry_month = request.POST['expiry_month']
-    # expiry_year = request.POST['expiry_year']
-    # check_in = request.POST['check_in_date']
-    # check_out = request.POST['check_out_date']
-    # selected_room_types = request.POST['selected_room_types']
-    #
-    # reference_number = ''.join(random.choices(string.ascii_uppercase+string.digits, k=8))
+def confirm_booking(request):
+    first_name = request.POST['first_name']
+    last_name = request.POST['last_name']
+    address = request.POST['address']
+    email = request.POST['email']
+    card_holder_name = request.POST['card_holder_name']
+    card_type = request.POST['card_type']
+    card_number = request.POST['card_number']
+    expiry_month = request.POST['expiry_month']
+    expiry_year = request.POST['expiry_year']
+    persons = request.POST['persons']
+    check_in = request.POST['check_in_date']
+    check_out = request.POST['check_out_date']
+    selected_room_types = request.POST['selected_room_types']
+    number_of_nights = request.POST['number_of_nights']
+    room_type_ids = request.POST['room_type_ids']
+    selected_room_type_counts = request.POST['selected_room_type_counts']
 
-    # booking = Booking.objects.create(
-    #     user=request.user,
-    #     reference_number=reference_number,
-    #     booking_status_id=1,
-    #     check_in=date()
-    # )
+    selected_room_types = []
+
+    i = 0
+    for id in room_type_ids.split(","):
+        room_type = RoomType.objects.filter(pk=int(id)).values()[0]
+        room_type['selected_rooms'] = int(selected_room_type_counts.split(",")[i])
+        selected_room_types.append(room_type)
+        i += 1
+
+    total_payment = 0
+
+    for room_type in selected_room_types:
+        total_payment += room_type['rate'] * room_type['selected_rooms'] * int(number_of_nights)
+
+    reference_number = ''.join(random.choices(string.ascii_uppercase+string.digits, k=8))
+
+    transaction_number = ''.join(random.choices(string.ascii_uppercase+string.digits, k=8))
+
+    check_in_date = date(int(check_in.split("-")[0]), int(check_in.split("-")[1]), int(check_in.split("-")[2]))
+
+    check_out_date = date(int(check_out.split("-")[0]), int(check_out.split("-")[1]), int(check_out.split("-")[2]))
+
+    # storage for id's of occupied rooms
+    occupied_room_ids = []
+    rooms_to_book_ids = []
+
+    # get bookings within the range of chek-in and check-out dates
+    active_bookings = Booking.objects.filter(check_in__range=(check_in_date, check_out_date)) | Booking.objects.filter(
+        check_out__range=(check_in_date, check_out_date)).values()
+
+    # get all rooms included in active_bookings
+    for active_booking in active_bookings:
+        for room in active_booking.rooms.all().values():
+            occupied_room_ids.append(room['id'])
+
+    for room_type in selected_room_types:
+        selected_rooms = room_type['selected_rooms']
+        all_rooms_for_type = Room.objects.filter(room_type_id=room_type['id'])
+        available_rooms_for_type = all_rooms_for_type.exclude(pk__in=occupied_room_ids).values('id')
+        for n in range(selected_rooms):
+            rooms_to_book_ids.append(available_rooms_for_type[n])
+
+    booking = Booking.objects.create(
+        user=request.user,
+        reference_number=reference_number,
+        booking_status_id=1,
+        check_in=check_in_date,
+        check_out=check_out_date,
+        persons=persons,
+        created_at=datetime.datetime.now()
+    )
+
+    # add rooms to booking
+    for id in rooms_to_book_ids:
+        booking.rooms.add(Room.objects.get(pk=id['id']))
+
+    payment = Payment.objects.create(
+        transaction_number=transaction_number,
+        booking=booking,
+        status_id=2,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        address=address,
+        amount=total_payment
+    )
+
+    card = Card.objects.create(
+        payment=payment,
+        type_id=int(card_type),
+        holder=card_holder_name,
+        number=card_number,
+        expiry_date=date(int(expiry_year), int(expiry_month), 1)
+    )
+
+    return redirect('my-bookings')
+
+def show_bookings(request):
+    bookings = Booking.objects.filter(user=request.user)
+
+    bookings_lists = []
+
+    for booking in bookings:
+        room_types = []
+        room_counts = []
+        room_type_counts = []
+
+        for room in booking.rooms.all():
+            if not room.room_type in room_types:
+                room_types.append(room.room_type)
+                room_counts.append(booking.rooms.all().filter(room_type=room.room_type).count())
+
+        i = 0
+        for type in room_types:
+            room_type_counts.append(room_counts[i].__str__() + " x " + type.__str__())
+            i += 1
+        # booking['room_type_counts'] = room_type_counts
+        booking_dictionary = {}
+        booking_dictionary['reference_number'] = booking.reference_number
+        booking_dictionary['check_in'] = booking.check_in.__str__()
+        booking_dictionary['check_out'] = booking.check_out.__str__()
+        booking_dictionary['persons'] = booking.persons
+        booking_dictionary['created_at'] = booking.created_at.year.__str__() + "-" + booking.created_at.month.__str__() + "-" + booking.created_at.day.__str__() + " " + booking.created_at.hour.__str__() + ":" + booking.created_at.minute.__str__() + ":" + booking.created_at.second.__str__()
+        booking_dictionary['rooms_included'] = room_type_counts
+        booking_dictionary['booking_status'] = booking.booking_status
+        booking_dictionary['booking_status_id'] = booking.booking_status_id
+        booking_dictionary['total_amount'] = booking.payment.amount
+
+        bookings_lists.append(booking_dictionary)
 
     return render(request, 'hotel_booking/my_bookings.html', {
-        # 'user': request.user,
-        # 'reference_number': reference_number,
-        # 'selected_room_types': selected_room_types[0]
+        'bookings': bookings,
+        'room_types': room_types,
+        'room_counts': room_counts,
+        'room_type_counts': room_type_counts,
+        'bookings_lists': bookings_lists
     })

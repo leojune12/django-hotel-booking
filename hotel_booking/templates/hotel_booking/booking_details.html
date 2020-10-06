@@ -86,19 +86,19 @@
             cols="12"
             md="8"
         >
-            <v-card class="mt-10">
-                <v-card-title style="background-color: #BBDEFB">
-                    Enter your details
-                </v-card-title>
-                <v-form
-                    ref="form"
-                    v-model="valid"
-                    lazy-validation
-                    id="form"
-                    action="{% url 'my-bookings' %}"
-                    method="post"
-                >
-                    {% csrf_token %}
+            <v-form
+                ref="form"
+                v-model="valid"
+                lazy-validation
+                id="form"
+                action="{% url 'confirm-booking' %}"
+                method="post"
+            >
+                {% csrf_token %}
+                <v-card class="mt-10 mt-md-0">
+                    <v-card-title style="background-color: #BBDEFB">
+                        Enter your details
+                    </v-card-title>
                     <v-card-text>
                         <v-row>
                             <v-col
@@ -151,7 +151,24 @@
                                 ></v-text-field>
                             </v-col>
                         </v-row>
-                        <v-divider></v-divider>
+                        <v-row>
+                            <v-col
+                                cols="12"
+                                md="6"
+                            >
+                                <label for="" class="mb-0" id="persons_label">Number of persons</label>
+                                <select class="form-control form-control-sm" id="persons" name="persons" required>
+                                    <option v-for="n in 30" :value="[[ n ]]">[[ n ]]</option>
+                                </select>
+                            </v-col>
+                        </v-row>
+                    </v-card-text>
+                </v-card>
+                <v-card class="mt-10">
+                    <v-card-title style="background-color: #BBDEFB">
+                        Card details
+                    </v-card-title>
+                    <v-card-text>
                         <v-row>
                             <v-col
                                 cols="12"
@@ -172,7 +189,7 @@
                                 <label for="" class="mb-0" id="card_type_label">Card Type</label>
                                 <select class="form-control form-control-sm" id="card_type" name="card_type" required>
                                     <option value="0">Select Card</option>
-                                    <option v-for="type in cardTypes" :key="type.id" value="type.id">[[ type.type ]]</option>
+                                    <option v-for="type in cardTypes" :key="type.id" :value="type.id">[[ type.type ]]</option>
                                 </select>
                             </v-col>
                         </v-row>
@@ -217,15 +234,17 @@
                             </v-col>
                         </v-row>
                     </v-card-text>
-                    <v-card-actions class="px-4">
-                        <v-spacer></v-spacer>
-                        <v-btn x-large color="green darken-1" class="mb-3 px-12" dark :block="!$vuetify.breakpoint.mdAndUp" @click="validate">Confirm Booking</v-btn>
-                    </v-card-actions>
+                </v-card>
+                <div class="d-flex mt-5">
                     <input type="hidden" name="check_in_date" :value="check_in_date">
                     <input type="hidden" name="check_out_date" :value="check_out_date">
                     <input type="hidden" name="selected_room_types" :value="selectedRoomTypes">
-                </v-form>
-            </v-card>
+                    <input type="hidden" name="number_of_nights" :value="number_of_nights">
+                    <input type="hidden" name="room_type_ids" :value="hidden_values_ids">
+                            <input type="hidden" name="selected_room_type_counts" :value="hidden_values_counts">
+                    <v-btn x-large color="green darken-1" class="mb-3 px-12 ml-auto" dark :block="!$vuetify.breakpoint.mdAndUp" @click="validate">Confirm Booking</v-btn>
+                </div>
+            </v-form>
         </v-col>
     </v-row>
 {% endblock %}
@@ -277,7 +296,31 @@
                     rooms += type.selected_rooms
                 }
                 return rooms
-            }
+            },
+
+            hidden_values_ids() {
+                let ids = "";
+                this.selectedRoomTypes.forEach(function (value, index, array) {
+                    if (index === array.length-1) {
+                        ids += value.id
+                    } else {
+                        ids += value.id + ','
+                    }
+                })
+                return ids
+            },
+
+            hidden_values_counts() {
+                let counts = ""
+                this.selectedRoomTypes.map(function (value, index, array) {
+                    if (index === array.length-1) {
+                        counts += value.selected_rooms
+                    } else {
+                        counts += value.selected_rooms + ","
+                    }
+                })
+                return counts
+            },
         },
 
         mounted() {

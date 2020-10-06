@@ -10,6 +10,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
 
     path('search/', views.search_available_rooms, name='search'),
-    path('book/', views.book_guest, name='book'),
-    path('my-bookings/', views.bookings_list, name='my-bookings'),
+    path('booking-details/', views.book_guest, name='booking-details'),
+    path('confirm-booking/', views.confirm_booking, name='confirm-booking'),
+    path('my-bookings/', views.show_bookings, name='my-bookings'),
 ]

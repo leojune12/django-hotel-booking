@@ -68,14 +68,14 @@ class Booking(models.Model):
     def __str__(self):
         return self.reference_number
 
-    def description(self):
-        return "Booking from " + self.check_in.__str__() + " to " + self.check_out.__str__() + " by " + self.user.first_name + " " + self.user.last_name
-
     def rooms_included(self):
         return list(self.rooms.all())
 
 class PaymentStatus(models.Model):
     status = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.status
 
 class Payment(models.Model):
     transaction_number = models.CharField(
@@ -99,7 +99,7 @@ class Payment(models.Model):
     amount = models.FloatField()
 
     def __str__(self):
-        return "Payment for '" + self.booking.__str__() + "'"
+        return self.transaction_number
 
 class CardType(models.Model):
     type = models.CharField(max_length=100)
@@ -123,4 +123,4 @@ class Card(models.Model):
     expiry_date = models.DateField()
 
     def __str__(self):
-        return "Card for '" + self.payment.__str__() + "'"
+        return "Card for payment transaction number '" + self.payment.__str__() + "'"

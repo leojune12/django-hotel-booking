@@ -167,6 +167,9 @@
                                     <th class="text-left text-dark">
                                         Price for {{ number_of_nights }} nights
                                     </th>
+                                    <th>
+                                        Rooms left
+                                    </th>
                                     <th class="text-left text-dark">
                                         Select Rooms
                                     </th>
@@ -177,6 +180,7 @@
                                     <td>[[ type.type ]]</td>
                                     <td>[[ type.description ]]</td>
                                     <td>&#8369; [[ type.rate * numberOfNights]]</td>
+                                    <td>[[ type.available_rooms ]]</td>
                                     <td>
                                         <select name="" class="form-control form-control-sm" v-model="type.selected_rooms">
                                             <option :value="i" v-for="(n, i) in type.available_rooms+1">[[ i ]]</option>
@@ -198,7 +202,7 @@
                         </div>
                         <v-form
                             method="post"
-                            action="{% url 'book' %}"
+                            action="{% url 'booking-details' %}"
                             v-if="selected_room_count"
                         >
                             {% csrf_token %}

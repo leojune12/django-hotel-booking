@@ -31,8 +31,8 @@ class CardInLine(admin.StackedInline):
     model = Card
 
 class PaymentAdmin(admin.ModelAdmin):
-    fields = ['transaction_number', 'booking', 'first_name', 'last_name', 'email', 'address', 'amount']
-    list_display = ('transaction_number', 'booking', 'first_name', 'last_name', 'email', 'address', 'amount')
+    fields = ['transaction_number', 'booking', 'first_name', 'last_name', 'email', 'address', 'amount', 'status']
+    list_display = ('transaction_number', 'booking', 'first_name', 'last_name', 'email', 'address', 'amount', 'status')
     inlines = [CardInLine]
 
 class PaymentStatusAdmin(admin.ModelAdmin):
