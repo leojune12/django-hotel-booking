@@ -91,7 +91,7 @@
                 v-model="valid"
                 lazy-validation
                 id="form"
-                action="{% url 'confirm-booking' %}"
+                action="{% url 'booking-confirm' %}"
                 method="post"
             >
                 {% csrf_token %}
@@ -201,8 +201,9 @@
                                 <v-text-field
                                     required
                                     label="Card Number"
-                                    :rules="requiredRules"
+                                    :rules="cardRules"
                                     name="card_number"
+                                    :counter="16"
                                 ></v-text-field>
                             </v-col>
                             <v-col
@@ -277,6 +278,11 @@
             ],
             requiredRules: [
                 v => !!v || 'This field is required',
+                v => (v && v.length <= 100) || 'This field must not more than 100 characters',
+            ],
+            cardRules: [
+                v => !!v || 'This field is required',
+                v => (v && v.length <= 16) || 'This field must not more than 16 characters',
             ],
             valid: true,
         },

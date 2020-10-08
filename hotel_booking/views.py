@@ -6,6 +6,7 @@ from hotel_booking.models import Hotel, Booking, BookingStatus, Room, RoomType, 
 
 import json
 from datetime import date
+from django.utils import timezone
 from django.db.models import Q
 import datetime
 import string
@@ -36,7 +37,7 @@ def logout_view(request):
     return redirect('index')
 
 @login_required
-def search_available_rooms(request):
+def booking_search(request):
     # get hotel instance
     hotel = Hotel.objects.get(id=1)
 
@@ -70,7 +71,7 @@ def search_available_rooms(request):
         room_type['selected_rooms'] = 0
         available_room_types.append(room_type)
 
-    return render(request, 'hotel_booking/check_rooms.html', {
+    return render(request, 'hotel_booking/booking_search.html', {
         'hotel': hotel,
         'check_in': check_in_date,
         'check_out': check_out_date,
@@ -79,7 +80,7 @@ def search_available_rooms(request):
     })
 
 @login_required
-def book_guest(request):
+def booking_details(request):
     hotel = Hotel.objects.get(id=1)
     check_in_date = request.POST['check_in_date']
     check_out_date = request.POST['check_out_date']
@@ -111,7 +112,8 @@ def book_guest(request):
     })
 
 @login_required
-def confirm_booking(request):
+def booking_confirm(request):
+    # get all post data
     first_name = request.POST['first_name']
     last_name = request.POST['last_name']
     address = request.POST['address']
@@ -124,37 +126,38 @@ def confirm_booking(request):
     persons = request.POST['persons']
     check_in = request.POST['check_in_date']
     check_out = request.POST['check_out_date']
-    selected_room_types = request.POST['selected_room_types']
     number_of_nights = request.POST['number_of_nights']
     room_type_ids = request.POST['room_type_ids']
     selected_room_type_counts = request.POST['selected_room_type_counts']
 
     selected_room_types = []
 
+    # get selected room types and add to list
     i = 0
     for id in room_type_ids.split(","):
+        # get first item
         room_type = RoomType.objects.filter(pk=int(id)).values()[0]
-        room_type['selected_rooms'] = int(selected_room_type_counts.split(",")[i])
+        # add key and value
+        room_type['selected_rooms_count'] = int(selected_room_type_counts.split(",")[i])
         selected_room_types.append(room_type)
         i += 1
 
+    # calculate total payment
     total_payment = 0
-
     for room_type in selected_room_types:
-        total_payment += room_type['rate'] * room_type['selected_rooms'] * int(number_of_nights)
+        total_payment += room_type['rate'] * room_type['selected_rooms_count'] * int(number_of_nights)
 
+    # generate 8 random characters
     reference_number = ''.join(random.choices(string.ascii_uppercase+string.digits, k=8))
-
     transaction_number = ''.join(random.choices(string.ascii_uppercase+string.digits, k=8))
-
+    # convert string data to date instance
     check_in_date = date(int(check_in.split("-")[0]), int(check_in.split("-")[1]), int(check_in.split("-")[2]))
-
     check_out_date = date(int(check_out.split("-")[0]), int(check_out.split("-")[1]), int(check_out.split("-")[2]))
 
     # storage for id's of occupied rooms
     occupied_room_ids = []
+    # storage for room id's to book
     rooms_to_book_ids = []
-
     # get bookings within the range of chek-in and check-out dates
     active_bookings = Booking.objects.filter(check_in__range=(check_in_date, check_out_date)) | Booking.objects.filter(
         check_out__range=(check_in_date, check_out_date)).values()
@@ -163,14 +166,18 @@ def confirm_booking(request):
     for active_booking in active_bookings:
         for room in active_booking.rooms.all().values():
             occupied_room_ids.append(room['id'])
-
+    # set rooms to book
     for room_type in selected_room_types:
-        selected_rooms = room_type['selected_rooms']
+        selected_rooms_count = room_type['selected_rooms_count']
+        # get rooms of this type
         all_rooms_for_type = Room.objects.filter(room_type_id=room_type['id'])
-        available_rooms_for_type = all_rooms_for_type.exclude(pk__in=occupied_room_ids).values('id')
-        for n in range(selected_rooms):
-            rooms_to_book_ids.append(available_rooms_for_type[n])
+        # get rooms with id NOT found in occupied_rooms_id
+        available_rooms_id_for_this_type = all_rooms_for_type.exclude(pk__in=occupied_room_ids).values('id')
+        # book rooms only found in available_rooms_id_for_this_type
+        for n in range(selected_rooms_count):
+            rooms_to_book_ids.append(available_rooms_id_for_this_type[n])
 
+    # create booking object
     booking = Booking.objects.create(
         user=request.user,
         reference_number=reference_number,
@@ -185,6 +192,7 @@ def confirm_booking(request):
     for id in rooms_to_book_ids:
         booking.rooms.add(Room.objects.get(pk=id['id']))
 
+    # create payment object
     payment = Payment.objects.create(
         transaction_number=transaction_number,
         booking=booking,
@@ -195,7 +203,7 @@ def confirm_booking(request):
         address=address,
         amount=total_payment
     )
-
+    # create card object
     card = Card.objects.create(
         payment=payment,
         type_id=int(card_type),
@@ -204,13 +212,18 @@ def confirm_booking(request):
         expiry_date=date(int(expiry_year), int(expiry_month), 1)
     )
 
-    return redirect('my-bookings')
+    # create session
+    request.session['booking_message'] = "Booking created successfully"
 
-def show_bookings(request):
-    bookings = Booking.objects.filter(user=request.user)
+    return redirect('booking-list')
 
+def booking_list_user(request):
+    bookings = Booking.objects.filter(user=request.user).order_by('-created_at')
+
+    # storage for list of bookings
     bookings_lists = []
 
+    # convert each queryset to dictionary
     for booking in bookings:
         room_types = []
         room_counts = []
@@ -225,24 +238,47 @@ def show_bookings(request):
         for type in room_types:
             room_type_counts.append(room_counts[i].__str__() + " x " + type.__str__())
             i += 1
-        # booking['room_type_counts'] = room_type_counts
-        booking_dictionary = {}
-        booking_dictionary['reference_number'] = booking.reference_number
-        booking_dictionary['check_in'] = booking.check_in.__str__()
-        booking_dictionary['check_out'] = booking.check_out.__str__()
-        booking_dictionary['persons'] = booking.persons
-        booking_dictionary['created_at'] = booking.created_at.year.__str__() + "-" + booking.created_at.month.__str__() + "-" + booking.created_at.day.__str__() + " " + booking.created_at.hour.__str__() + ":" + booking.created_at.minute.__str__() + ":" + booking.created_at.second.__str__()
-        booking_dictionary['rooms_included'] = room_type_counts
-        booking_dictionary['booking_status'] = booking.booking_status
-        booking_dictionary['booking_status_id'] = booking.booking_status_id
-        booking_dictionary['total_amount'] = booking.payment.amount
 
+        # create dictionary of booking
+        booking_dictionary = {
+            'id': booking.id,
+            'reference_number': booking.reference_number,
+            'check_in': booking.check_in.__str__(),
+            'check_out': booking.check_out.__str__(),
+            'persons': booking.persons,
+            'created_at': booking.created_at,
+            'rooms_included': room_type_counts,
+            'booking_status': booking.booking_status,
+            'booking_status_id': booking.booking_status_id,
+            'total_amount': booking.payment.amount
+        }
+        # add dictionary to list of bookings
         bookings_lists.append(booking_dictionary)
 
-    return render(request, 'hotel_booking/my_bookings.html', {
-        'bookings': bookings,
-        'room_types': room_types,
-        'room_counts': room_counts,
-        'room_type_counts': room_type_counts,
-        'bookings_lists': bookings_lists
-    })
+    # if session exist
+    if 'booking_message' in request.session:
+        # store before deleting
+        message = request.session['booking_message']
+        del request.session['booking_message']
+
+        return render(request, 'hotel_booking/booking_list_user.html', {
+            'booking_message': message,
+            'bookings': bookings,
+            'bookings_lists': bookings_lists
+        })
+    else:
+        return render(request, 'hotel_booking/booking_list_user.html', {
+            'bookings': bookings,
+            'bookings_lists': bookings_lists
+        })
+
+def booking_cancel(request):
+    booking_id = request.POST['booking_id']
+
+    # update object
+    Booking.objects.filter(pk=booking_id).update(booking_status_id=2)
+
+    # create session
+    request.session['booking_message'] = "Booking cancelled successfully"
+
+    return redirect('booking-list')

@@ -1,19 +1,21 @@
 {% extends 'hotel_booking/base.html' %}
 
 {% block contents %}
-{#    <v-alert#}
-{#        type="success"#}
-{#        dismissible#}
-{#    >#}
-{#        I'm a success alert.#}
-{#    </v-alert>#}
+    {% if booking_message %}
+        <v-alert
+            type="success"
+            dismissible
+        >
+            {{ booking_message }}
+        </v-alert>
+    {% endif %}
 
     <v-card>
         <v-card-title>
             Bookings list
         </v-card-title>
         <v-card-text>
-            <v-simple-table>
+            <v-simple-table class="border">
                 <template v-slot:default>
                     <thead>
                         <tr>
@@ -41,6 +43,9 @@
                             <th class="text-left">
                                 Status
                             </th>
+                            <th class="text-left">
+                                Actions
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -56,7 +61,7 @@
                                     {% endfor %}
                                 </td>
                                 <td class="text-nowrap">&#8369; [[ format_amount({{ booking.total_amount }}) ]]</td>
-                            <td class="text-nowrap">{{ booking.created_at }}</td>
+                                <td class="text-nowrap">{{ booking.created_at }}</td>
                                 <td class="text-nowrap">
                                     {% if  booking.booking_status_id == 1 %}
                                         <v-chip
@@ -68,20 +73,20 @@
                                     {% elif booking.booking_status_id == 2 %}
                                         <v-chip
                                             class="text-white ma-0"
-                                            color="red"
+                                            color="error"
                                         >
                                             {{ booking.booking_status }}
                                         </v-chip>
                                     {% elif booking.booking_status_id == 3 %}
                                         <v-chip
-                                            class="ma-0"
-                                            color="green"
+                                            class="ma-0 text-white"
+                                            color="orange"
                                         >
                                             {{ booking.booking_status }}
                                         </v-chip>
                                     {% elif booking.booking_status_id == 4 %}
                                         <v-chip
-                                            class="ma-0"
+                                            class="ma-0 text-white"
                                             color="green"
                                         >
                                             {{ booking.booking_status }}
@@ -94,8 +99,24 @@
                                         </v-chip>
                                     {% endif %}
                                 </td>
+                                <td>
+                                    {% if  booking.booking_status_id == 1 %}
+                                    <v-btn
+                                        text
+                                        class="px-1"
+                                        color="error"
+                                        @click="confirm_cancel({{ booking.id }})"
+                                    >
+                                        Cancel
+                                    </v-btn>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
+                        <v-form action="{% url 'booking-cancel' %}" method="post" id="cancel_form">
+                            {% csrf_token %}
+                            <input type="hidden" :value="cancel_booking_id" name="booking_id">
+                        </v-form>
                     </tbody>
                 </template>
             </v-simple-table>
@@ -113,12 +134,7 @@
         ],
         data: {
             show: false,
-            bookings: [
-{#                {% for booking in bookings %}#}
-{#                    {{ booking|safe }},#}
-{#                {% endfor %}#}
-
-            ]
+            cancel_booking_id: null,
         },
 
         computed: {
@@ -132,7 +148,16 @@
         methods: {
             format_amount(amount) {
                 return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-            }
+            },
+
+            confirm_cancel(id) {
+                this.cancel_booking_id = id
+                if (confirm("Are you sure to cancel this booking?")) {
+                    setTimeout(function () {
+                        document.getElementById('cancel_form').submit()
+                    }, 500)
+                }
+            },
         },
     })
     </script>

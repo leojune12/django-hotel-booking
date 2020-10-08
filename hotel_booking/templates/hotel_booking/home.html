@@ -20,7 +20,7 @@
             <v-form
                 ref="form"
                 v-model="valid"
-                action="{% url 'search' %}"
+                action="{% url 'booking-search' %}"
                 id="form"
                 method="get"
             >
@@ -73,7 +73,7 @@
                                 <v-btn
                                   text
                                   color="primary"
-                                  @click="$refs.check_in_dialog.save(check_in_date)"
+                                  @click="save_check_in(check_in_date)"
                                 >
                                   OK
                                 </v-btn>
@@ -105,7 +105,7 @@
                             <v-date-picker
                                 v-model="check_out_date"
                                 scrollable
-                                :min="added_one_day"
+                                :min="day_after_checkin(check_in_date)"
                             >
                                 <v-spacer></v-spacer>
                                 <v-btn
@@ -204,9 +204,6 @@
                     return true
                 }
             },
-            added_one_day() {
-                return moment(this.check_in_date).add(1, 'day').format('YYYY-MM-DD')
-            }
         },
 
         mounted() {
@@ -219,6 +216,15 @@
                     document.getElementById('form').submit()
                 }
             },
+            day_after_checkin(date) {
+                if(date) {
+                    return moment(date).add(1, 'day').format('YYYY-MM-DD')
+                }
+            },
+            save_check_in(check_in_date) {
+                this.$refs.check_in_dialog.save(check_in_date)
+                this.check_out_date = this.day_after_checkin(check_in_date)
+            }
         },
     })
     </script>
