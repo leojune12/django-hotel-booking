@@ -66,13 +66,27 @@
                     <a href="{% url 'signup' %}" class="text-white pa-2">
                         Signup
                     </a>
-                    <div class="px-2">|</div>
+                    <v-divider
+                        class="mx-4 my-0"
+                        vertical
+                    ></v-divider>
                     <a href="{% url 'login' %}" class="text-white pa-2">
                         Login
                     </a>
                 {% else %}
-                    <a href="{% url 'booking-list' %}" class="text-white pa-2">My Bookings</a>
-                    <div class="px-2">|</div>
+                    {% if perms.hotel_booking.can_add_hotel %}
+                        <a href="{% url 'admin-bookings' %}" class="text-white pa-2">
+                            Bookings
+                        </a>
+                    {% else %}
+                        <a href="{% url 'booking-list' %}" class="text-white pa-2">
+                            My Bookings
+                        </a>
+                    {% endif %}
+                    <v-divider
+                        class="mx-4 my-0"
+                        vertical
+                    ></v-divider>
                     <v-menu
                       left
                       bottom

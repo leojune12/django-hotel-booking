@@ -1,7 +1,7 @@
 from django.contrib.auth import login, logout, authenticate
 from django.shortcuts import render, redirect
 from hotel_booking.forms import SignUpForm
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from hotel_booking.models import Hotel, Booking, BookingStatus, Room, RoomType, CardType, Payment, Card
 
 import json
@@ -31,6 +31,16 @@ def signup(request):
     else:
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
+
+def login(request):
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        login(request, user)
+        return redirect('index')
+    else:
+        return redirect('login', error="Please enter a correct username and password. Note that both fields may be case-sensitive.")
 
 def logout_view(request):
     logout(request)
@@ -185,7 +195,6 @@ def booking_confirm(request):
         check_in=check_in_date,
         check_out=check_out_date,
         persons=persons,
-        created_at=datetime.datetime.now()
     )
 
     # add rooms to booking
@@ -282,3 +291,61 @@ def booking_cancel(request):
     request.session['booking_message'] = "Booking cancelled successfully"
 
     return redirect('booking-list')
+
+@login_required
+@permission_required('hotel_booking.can_add_hotel', raise_exception=True)
+def booking_list_admin(request):
+    bookings = Booking.objects.all().order_by('-created_at')
+
+    # storage for list of bookings
+    bookings_lists = []
+
+    # convert each queryset to dictionary
+    for booking in bookings:
+        room_types = []
+        room_counts = []
+        room_type_counts = []
+
+        for room in booking.rooms.all():
+            if not room.room_type in room_types:
+                room_types.append(room.room_type)
+                room_counts.append(booking.rooms.all().filter(room_type=room.room_type).count())
+
+        i = 0
+        for type in room_types:
+            room_type_counts.append(room_counts[i].__str__() + " x " + type.__str__())
+            i += 1
+
+        # create dictionary of booking
+        booking_dictionary = {
+            'id': booking.id,
+            'guest_name': booking.guest_name(),
+            'reference_number': booking.reference_number,
+            'check_in': booking.check_in.__str__(),
+            'check_out': booking.check_out.__str__(),
+            'persons': booking.persons,
+            'created_at': booking.created_at.__str__(),
+            'rooms_included': room_type_counts,
+            'booking_status': booking.booking_status.__str__(),
+            'booking_status_id': booking.booking_status_id,
+            'total_amount': booking.payment.amount
+        }
+        # add dictionary to list of bookings
+        bookings_lists.append(booking_dictionary)
+
+    # if session exist
+    if 'booking_message' in request.session:
+        # store before deleting
+        message = request.session['booking_message']
+        del request.session['booking_message']
+
+        return render(request, 'hotel_booking/booking_list_user.html', {
+            'booking_message': message,
+            'bookings': bookings,
+            'bookings_lists': bookings_lists
+        })
+    else:
+        return render(request, 'hotel_booking/booking_list_admin.html', {
+            'bookings': bookings,
+            'bookings_lists': bookings_lists
+        })

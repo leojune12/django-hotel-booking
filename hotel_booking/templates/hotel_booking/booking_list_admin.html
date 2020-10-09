@@ -1,0 +1,138 @@
+{% extends 'hotel_booking/base.html' %}
+
+{% block contents %}
+    {% if booking_message %}
+        <v-alert
+            type="success"
+            dismissible
+        >
+            {{ booking_message }}
+        </v-alert>
+    {% endif %}
+
+    <v-card>
+        <v-card-title>
+            Bookings list
+            <v-spacer></v-spacer>
+            <v-text-field
+                v-model="search"
+                append-icon="mdi-magnify"
+                label="Search"
+                single-line
+                hide-details
+            ></v-text-field>
+        </v-card-title>
+        <v-card-text>
+            <v-data-table
+                :headers="headers"
+                :items="bookings"
+                class="elevation-1"
+                :search="search"
+            >
+                <template v-slot:item.reference_number="{ item }">
+                    <a href="">
+                        [[ item.reference_number ]]
+                    </a>
+                </template>
+                <template v-slot:item.rooms_included="{ item }">
+                    <div class="d-block py-1" v-for="room in item.rooms_included">
+                        [[ room ]]
+                    </div>
+                </template>
+                <template v-slot:item.created_at="{ item }">
+                    [[ item.created_at.substr(0, 16) ]]
+                </template>
+                <template v-slot:item.booking_status="{ item }">
+                    <v-chip
+                      color="primary"
+                      dark
+                      v-if="item.booking_status_id === 1"
+                    >
+                        [[ item.booking_status ]]
+                    </v-chip>
+                    <v-chip
+                      color="error"
+                      dark
+                      v-else-if="item.booking_status_id === 2"
+                    >
+                        [[ item.booking_status ]]
+                    </v-chip>
+                    <v-chip
+                      color="orange"
+                      dark
+                      v-else-if="item.booking_status_id === 3"
+                    >
+                        [[ item.booking_status ]]
+                    </v-chip>
+                    <v-chip
+                      color="green"
+                      dark
+                      v-else-if="item.booking_status_id === 4"
+                    >
+                        [[ item.booking_status ]]
+                    </v-chip>
+                    <v-chip
+                      dark
+                      v-else
+                    >
+                        [[ item.booking_status ]]
+                    </v-chip>
+                  </template>
+            </v-data-table>
+        </v-card-text>
+    </v-card>
+{% endblock %}
+{% block script %}
+    <script>
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        delimiters: [
+            '[[',
+            ']]',
+        ],
+        data: {
+            show: false,
+            search: "",
+            headers: [
+                {
+                    text: 'Reference Number',
+                    align: 'start',
+                    value: 'reference_number',
+                },
+                { text: 'Guest', value: 'guest_name' },
+                { text: 'Check-in', value: 'check_in' },
+                { text: 'Check-out', value: 'check_out' },
+                {
+                    text: 'Rooms included',
+                    value: 'rooms_included',
+                    sortable: false,
+                },
+                { text: 'Created', value: 'created_at' },
+                {
+                    text: 'Status',
+                    value: 'booking_status',
+                    sortable: false,
+                },
+            ],
+            bookings: [
+                {% for booking in bookings_lists %}
+                    {{ booking|safe }},
+                {% endfor %}
+            ]
+        },
+
+        computed: {
+
+        },
+
+        mounted() {
+            this.show = true
+        },
+
+        methods: {
+
+        },
+    })
+    </script>
+{% endblock %}

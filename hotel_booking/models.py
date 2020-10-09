@@ -63,13 +63,16 @@ class Booking(models.Model):
     check_in = models.DateField()
     check_out = models.DateField()
     persons = models.IntegerField()
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.reference_number
 
     def rooms_included(self):
         return list(self.rooms.all())
+
+    def guest_name(self):
+        return self.user.first_name + " " + self.user.last_name
 
 class PaymentStatus(models.Model):
     status = models.CharField(max_length=100)
