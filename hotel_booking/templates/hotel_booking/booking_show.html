@@ -1,0 +1,449 @@
+{% extends 'hotel_booking/base.html' %}
+
+{% block contents %}
+    <v-row>
+        <v-col
+            cols="12"
+            md="8"
+        >
+            <v-card>
+                <v-card-title style="background-color: #C5CAE9">
+                    Booking Information
+                </v-card-title>
+                <v-card-text>
+                    <v-row>
+                        <v-col
+                            cols="12"
+                            md="6"
+                            class="py-0"
+                        >
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Reference Number
+                                    </v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        {{ booking.reference_number }}
+                                    </v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Booked by(username)
+                                    </v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        {{ booking.user }}
+                                    </v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Check-in
+                                    </v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        {{ booking.check_in }}
+                                    </v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Check-out
+                                    </v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        {{ booking.check_out }}
+                                    </v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Length of stay
+                                    </v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        [[ nights ]]-night<div class="d-inline" v-if="nights > 1">s</div>
+                                    </v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </v-col>
+                        <v-col
+                            cols="12"
+                            md="6"
+                            class="py-0"
+                        >
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Persons
+                                    </v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        {{ booking.persons }}
+                                    </v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Rooms Included
+                                    </v-list-item-title>
+                                    {% for room_type in room_type_counts %}
+                                    <v-list-item-subtitle>
+                                        {{ room_type }}
+                                    </v-list-item-subtitle>
+                                    {% endfor %}
+                                </v-list-item-content>
+                            </v-list-item>
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Booking Status
+                                    </v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        {% if booking.booking_status_id == 1 %}
+                                            <v-chip
+                                                class="ma-0"
+                                                color="primary"
+                                            >
+                                                {{ booking.booking_status }}
+                                            </v-chip>
+                                        {% elif booking.booking_status_id == 2 %}
+                                            <v-chip
+                                                color="error"
+                                                class="text-white ma-0"
+                                            >
+                                                {{ booking.booking_status }}
+                                            </v-chip>
+                                        {% elif booking.booking_status_id == 3 %}
+                                            <v-chip
+                                                color="orange"
+                                                dark
+                                            >
+                                                {{ booking.booking_status }}
+                                            </v-chip>
+                                        {% elif booking.booking_status_id == 4 %}
+                                            <v-chip
+                                                color="green"
+                                                class="text-white ma-0"
+                                            >
+                                                {{ booking.booking_status }}
+                                            </v-chip>
+                                        {% elif booking.booking_status_id == 5 %}
+                                            <v-chip
+                                                class="ma-0"
+                                                dark
+                                            >
+                                                {{ booking.booking_status }}
+                                            </v-chip>
+                                        {% else %}
+                                            <v-chip
+                                                class="ma-0"
+                                            >
+                                                {{ booking.booking_status }}
+                                            </v-chip>
+                                        {% endif %}
+                                    </v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                            <v-list-item two-line class="px-0">
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        Booked at
+                                    </v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        {{ booking.created_at }}
+                                    </v-list-item-subtitle>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+                <v-card-actions class="px-4 pb-4 pt-0">
+                    <v-spacer></v-spacer>
+                    <v-btn
+                        color="red"
+                        dark
+                        href="{% url 'admin-bookings' %}"
+                        text
+                        class="mr-2"
+                    >
+                        <v-icon>
+                            mdi-arrow-left
+                        </v-icon>
+                        Return to list
+                    </v-btn>
+                    {% if booking.booking_status_id == 1 %}
+                    <v-dialog
+                        v-model="dialog_no_show"
+                        persistent
+                        max-width="290"
+                    >
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn
+                            color="secondary"
+                            dark
+                            v-bind="attrs"
+                            v-on="on"
+                            outlined
+                            class="mr-2"
+                            >
+                            No Show
+                            </v-btn>
+                        </template>
+                        <v-card>
+                            <v-card-title class="headline">
+                            Now Show
+                            </v-card-title>
+                            <v-card-text>
+                                The guest did not showed-up?
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn
+                                color="primary darken-1"
+                                text
+                                @click="dialog_no_show = false"
+                                >
+                                Cancel
+                                </v-btn>
+                                <v-btn
+                                color="error darken-1"
+                                text
+                                href="/hotel-booking/admin/bookings/show/{{ booking.id }}/no-show"
+                                >
+                                Continue
+                                </v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </v-dialog>
+                    <v-dialog
+                        v-model="dialog_check_in"
+                        persistent
+                        max-width="290"
+                    >
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn
+                            color="orange"
+                            dark
+                            v-bind="attrs"
+                            v-on="on"
+                            outlined
+                            >
+                            Check-in
+                            </v-btn>
+                        </template>
+                        <v-card>
+                            <v-card-title class="headline">
+                            Check-in
+                            </v-card-title>
+                            <v-card-text>
+                                Make sure this booking is paid.
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn
+                                color="primary darken-1"
+                                text
+                                @click="dialog_check_in = false"
+                                >
+                                Cancel
+                                </v-btn>
+                                <v-btn
+                                color="orange darken-1"
+                                text
+                                href="/hotel-booking/admin/bookings/show/{{ booking.id }}/check-in"
+                                >
+                                Continue
+                                </v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </v-dialog>
+                    {% elif booking.booking_status_id == 3 %}
+                    <v-dialog
+                        v-model="dialog_check_out"
+                        persistent
+                        max-width="290"
+                    >
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn
+                            color="success"
+                            dark
+                            v-bind="attrs"
+                            v-on="on"
+                            outlined
+                            >
+                            Check-out
+                            </v-btn>
+                        </template>
+                        <v-card>
+                            <v-card-title class="headline">
+                            Check-out
+                            </v-card-title>
+                            <v-card-text>
+                                Check-out guest?
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn
+                                color="primary darken-1"
+                                text
+                                @click="dialog_check_out = false"
+                                >
+                                Cancel
+                                </v-btn>
+                                <v-btn
+                                color="error darken-1"
+                                text
+                                href="/hotel-booking/admin/bookings/show/{{ booking.id }}/check-out"
+                                >
+                                Continue
+                                </v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </v-dialog>
+                    {% endif %}
+                </v-card-actions>
+            </v-card>
+        </v-col>
+        <v-col
+            cols="12"
+            md="4"
+        >
+            <v-card>
+                <v-card-title style="background-color: #C5CAE9">
+                    Payment Information
+                </v-card-title>
+                <v-card-text>
+                    <v-list-item two-line class="px-0">
+                        <v-list-item-content>
+                            <v-list-item-title >
+                                Name
+                            </v-list-item-title>
+                            <v-list-item-subtitle>
+                                {{ booking.payment.first_name }} {{ booking.payment.last_name }}
+                            </v-list-item-subtitle>
+                        </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item two-line class="px-0">
+                        <v-list-item-content>
+                            <v-list-item-title>
+                                Email
+                            </v-list-item-title>
+                            <v-list-item-subtitle>
+                                {{ booking.payment.email }}
+                            </v-list-item-subtitle>
+                        </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item two-line class="px-0">
+                        <v-list-item-content>
+                            <v-list-item-title>
+                                Address
+                            </v-list-item-title>
+                            <v-list-item-subtitle>
+                                {{ booking.payment.address }}
+                            </v-list-item-subtitle>
+                        </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item two-line class="px-0">
+                        <v-list-item-content>
+                            <v-list-item-title >
+                                Transaction Number
+                            </v-list-item-title>
+                            <v-list-item-subtitle>
+                                {{ booking.payment.transaction_number }}
+                            </v-list-item-subtitle>
+                        </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item two-line class="px-0">
+                        <v-list-item-content>
+                            <v-list-item-title>
+                                Total Amount
+                            </v-list-item-title>
+                            <v-list-item-subtitle>
+                                &#8369; [[ format_amount({{ booking.payment.amount }}) ]]
+                            </v-list-item-subtitle>
+                        </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item two-line class="px-0">
+                        <v-list-item-content>
+                            <v-list-item-title>
+                                Payment Status
+                            </v-list-item-title>
+                            <v-list-item-subtitle>
+                                {% if booking.payment.status_id == 1 %}
+                                    <v-chip
+                                        class="ma-0 text-white"
+                                        color="green"
+                                    >
+                                        {{ booking.payment.status }}
+                                    </v-chip>
+                                {% elif booking.payment.status_id == 2 %}
+                                    <v-chip
+                                        class="ma-0"
+                                        color="primary"
+                                    >
+                                        {{ booking.payment.status }}
+                                    </v-chip>
+                                {% elif booking.payment.status_id == 3 %}
+                                    <v-chip
+                                        class="text-white ma-0"
+                                        color="error"
+                                    >
+                                        {{ booking.payment.status }}
+                                    </v-chip>
+                                {% elif booking.payment.status_id == 4 %}
+                                    <v-chip
+                                        class="ma-0"
+                                        dark
+                                    >
+                                        {{ booking.payment.status }}
+                                    </v-chip>
+                                {% else %}
+                                    <v-chip
+                                        class="ma-0"
+                                    >
+                                        {{ booking.payment.status }}
+                                    </v-chip>
+                                {% endif %}
+                            </v-list-item-subtitle>
+                        </v-list-item-content>
+                    </v-list-item>
+                </v-card-text>
+            </v-card>
+        </v-col>
+    </v-row>
+{% endblock %}
+{% block script %}
+    <script>
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        delimiters: [
+            '[[',
+            ']]',
+        ],
+        data: {
+            show: false,
+            nights: {{ nights_of_stay }},
+            dialog_no_show: false,
+            dialog_check_in: false,
+            dialog_check_out:false,
+        },
+
+        computed: {
+
+        },
+
+        mounted() {
+              this.show = true
+        },
+
+        methods: {
+            format_amount(amount) {
+                return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            },
+        },
+    })
+    </script>
+{% endblock %}

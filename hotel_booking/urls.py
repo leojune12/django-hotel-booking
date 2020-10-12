@@ -5,6 +5,10 @@ from . import views
 urlpatterns = [
     path('', views.index, name='index'),
     path('admin/bookings/', views.booking_list_admin, name='admin-bookings'),
+    path('admin/bookings/show/<int:booking_id>', views.booking_show, name='admin-bookings-show'),
+    path('admin/bookings/show/<int:booking_id>/check-in', views.booking_show_check_in, name='admin-bookings-show-check-in'),
+    path('admin/bookings/show/<int:booking_id>/check-out', views.booking_show_check_out, name='admin-bookings-show-check-out'),
+    path('admin/bookings/show/<int:booking_id>/no-show', views.booking_show_no_show, name='admin-bookings-show-no-show'),
 
     path('signup/', views.signup, name='signup'),
     path('login/', auth_views.LoginView.as_view(), name='login'),

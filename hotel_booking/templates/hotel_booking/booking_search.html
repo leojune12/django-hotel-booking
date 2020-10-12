@@ -187,10 +187,13 @@
                                         </select>
                                     </td>
                                 </tr>
+                                <tr v-if="no_rooms_available">
+                                    <td colspan="5" class="text-center">No available rooms for this date</td>
+                                </tr>
                             </tbody>
                         </template>
                     </v-simple-table>
-                    <v-card-actions class="d-flex flex-md-row flex-column px-0">
+                    <v-card-actions class="d-flex flex-md-row flex-column px-0" v-if="!no_rooms_available">
                         <ul class="text-success mr-5 my-3 my-0" style="list-style-type: none">
                             <li class=""><v-icon color="green">mdi-check</v-icon>Free Cancellation</li>
                             <li class=""><v-icon color="green">mdi-check</v-icon>No booking or credit card fees!</li>
@@ -298,10 +301,23 @@
                 })
                 return counts
             },
+
+            no_rooms_available() {
+                let no_available = true
+
+                this.availableRoomTypes.map(function (value) {
+                    if (value.available_rooms > 0) {
+                        no_available = false
+                    }
+                })
+
+                return no_available
+            }
         },
 
         mounted() {
             this.show = true
+            console.log(this.availableRoomTypes)
         },
 
         methods: {

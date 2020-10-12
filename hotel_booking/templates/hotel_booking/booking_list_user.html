@@ -53,7 +53,10 @@
                             <tr>
                                 <td class="text-nowrap">{{ booking.reference_number }}</td>
                                 <td class="text-nowrap">{{ booking.check_in }}</td>
-                                <td class="text-nowrap">{{ booking.check_out }}</td>
+                                <td class="text-nowrap">
+                                    {{ booking.check_out }}<br>
+                                    {{ booking.length_of_stay }}-night stay
+                                </td>
                                 <td class="text-nowrap">{{ booking.persons }}</td>
                                 <td class="text-nowrap">
                                     {% for room_type in booking.rooms_included %}
@@ -61,7 +64,7 @@
                                     {% endfor %}
                                 </td>
                                 <td class="text-nowrap">&#8369; [[ format_amount({{ booking.total_amount }}) ]]</td>
-                                <td class="text-nowrap">{{ booking.created_at }}</td>
+                                <td class="">{{ booking.created_at }}</td>
                                 <td class="text-nowrap">
                                     {% if  booking.booking_status_id == 1 %}
                                         <v-chip
@@ -91,6 +94,13 @@
                                         >
                                             {{ booking.booking_status }}
                                         </v-chip>
+                                    {% elif booking.booking_status_id == 5 %}
+                                        <v-chip
+                                            class="ma-0"
+                                            dark
+                                        >
+                                            {{ booking.booking_status }}
+                                        </v-chip>
                                     {% else %}
                                         <v-chip
                                             class="ma-0"
@@ -102,8 +112,7 @@
                                 <td>
                                     {% if  booking.booking_status_id == 1 %}
                                     <v-btn
-                                        text
-                                        class="px-1"
+                                        outlined
                                         color="error"
                                         @click="confirm_cancel({{ booking.id }})"
                                     >
@@ -111,6 +120,10 @@
                                     </v-btn>
                                     {% endif %}
                                 </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                            <td colspan="9" class="text-center">No data available</td>
                             </tr>
                         {% endfor %}
                         <v-form action="{% url 'booking-cancel' %}" method="post" id="cancel_form">

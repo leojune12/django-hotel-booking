@@ -30,7 +30,7 @@
                 :search="search"
             >
                 <template v-slot:item.reference_number="{ item }">
-                    <a href="">
+                    <a :href="'/hotel-booking/admin/bookings/show/'+item.id">
                         [[ item.reference_number ]]
                     </a>
                 </template>
@@ -112,14 +112,13 @@
                 {
                     text: 'Status',
                     value: 'booking_status',
-                    sortable: false,
                 },
             ],
             bookings: [
                 {% for booking in bookings_lists %}
                     {{ booking|safe }},
                 {% endfor %}
-            ]
+            ],
         },
 
         computed: {

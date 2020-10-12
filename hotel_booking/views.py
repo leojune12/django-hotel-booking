@@ -1,8 +1,9 @@
 from django.contrib.auth import login, logout, authenticate
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from hotel_booking.forms import SignUpForm
 from django.contrib.auth.decorators import login_required, permission_required
 from hotel_booking.models import Hotel, Booking, BookingStatus, Room, RoomType, CardType, Payment, Card
+from django.http import HttpResponseRedirect
 
 import json
 from datetime import date
@@ -61,7 +62,7 @@ def booking_search(request):
     occupied_room_ids = []
 
     # get bookings that are within the range of check-in and check-out dates AND booking status id is 1 or 3
-    active_bookings = Booking.objects.filter((Q(check_in__range=(check_in_date, check_out_date)) | Q(check_out__range=(check_in_date, check_out_date))) & Q(booking_status_id__in=[1, 3]))
+    active_bookings = get_active_bookings(check_in_date, check_out_date)
 
     # get all rooms included in active_bookings
     for active_booking in active_bookings:
@@ -147,7 +148,7 @@ def booking_confirm(request):
     for id in room_type_ids.split(","):
         # get first item
         room_type = RoomType.objects.filter(pk=int(id)).values()[0]
-        # add key and value
+        # add item in dictionary
         room_type['selected_rooms_count'] = int(selected_room_type_counts.split(",")[i])
         selected_room_types.append(room_type)
         i += 1
@@ -168,9 +169,12 @@ def booking_confirm(request):
     occupied_room_ids = []
     # storage for room id's to book
     rooms_to_book_ids = []
-    # get bookings within the range of chek-in and check-out dates
-    active_bookings = Booking.objects.filter(check_in__range=(check_in_date, check_out_date)) | Booking.objects.filter(
-        check_out__range=(check_in_date, check_out_date)).values()
+
+    # get bookings that are within the range of check-in and check-out dates AND booking status id is 1 or 3
+    # active_bookings = Booking.objects.filter(
+    #     (Q(check_in__range=(check_in_date, check_out_date)) | Q(check_out__range=(check_in_date, check_out_date))) & Q(
+    #         booking_status_id__in=[1, 3]))
+    active_bookings = get_active_bookings(check_in_date, check_out_date)
 
     # get all rooms included in active_bookings
     for active_booking in active_bookings:
@@ -248,12 +252,15 @@ def booking_list_user(request):
             room_type_counts.append(room_counts[i].__str__() + " x " + type.__str__())
             i += 1
 
+        length_of_stay = booking.check_out - booking.check_in
+
         # create dictionary of booking
         booking_dictionary = {
             'id': booking.id,
             'reference_number': booking.reference_number,
-            'check_in': booking.check_in.__str__(),
-            'check_out': booking.check_out.__str__(),
+            'check_in': booking.check_in,
+            'check_out': booking.check_out,
+            'length_of_stay': length_of_stay.days,
             'persons': booking.persons,
             'created_at': booking.created_at,
             'rooms_included': room_type_counts,
@@ -284,8 +291,11 @@ def booking_list_user(request):
 def booking_cancel(request):
     booking_id = request.POST['booking_id']
 
-    # update object
+
+    # update objects
     Booking.objects.filter(pk=booking_id).update(booking_status_id=2)
+
+    Payment.objects.filter(booking_id=booking_id).update(status_id=3)
 
     # create session
     request.session['booking_message'] = "Booking cancelled successfully"
@@ -349,3 +359,73 @@ def booking_list_admin(request):
             'bookings': bookings,
             'bookings_lists': bookings_lists
         })
+
+@login_required()
+@permission_required('hotel_booking.can_add_hotel', raise_exception=True)
+def booking_show(request, booking_id):
+    hotel = Hotel.objects.get(id=1)
+
+    # booking = Booking.objects.get(pk=booking_id)
+    booking = get_object_or_404(Booking, pk=booking_id)
+
+    room_types = []
+    room_counts = []
+    room_type_counts = []
+
+    for room in booking.rooms.all():
+        if not room.room_type in room_types:
+            room_types.append(room.room_type)
+            room_counts.append(booking.rooms.all().filter(room_type=room.room_type).count())
+
+    i = 0
+    for type in room_types:
+        room_type_counts.append(room_counts[i].__str__() + " x " + type.__str__())
+        i += 1
+
+    nights_of_stay = date(booking.check_out.year, booking.check_out.month, booking.check_out.day) - date(booking.check_in.year, booking.check_in.month, booking.check_in.day)
+
+    return render(request, 'hotel_booking/booking_show.html', {
+        'hotel': hotel,
+        'booking': booking,
+        'room_type_counts': room_type_counts,
+        'nights_of_stay': nights_of_stay.days
+    })
+
+@login_required()
+@permission_required('hotel_booking.can_add_hotel', raise_exception=True)
+def booking_show_check_in(request, booking_id):
+
+    # update objects
+    Booking.objects.filter(pk=booking_id).update(booking_status_id=3)
+
+    Payment.objects.filter(booking_id=booking_id).update(status_id=1)
+
+    # return to previous page
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+@login_required()
+@permission_required('hotel_booking.can_add_hotel', raise_exception=True)
+def booking_show_check_out(request, booking_id):
+
+    # update objects
+    Booking.objects.filter(pk=booking_id).update(booking_status_id=4)
+
+    # return to previous page
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+@login_required()
+@permission_required('hotel_booking.can_add_hotel', raise_exception=True)
+def booking_show_no_show(request, booking_id):
+
+    # update objects
+    Booking.objects.filter(pk=booking_id).update(booking_status_id=5)
+
+    Payment.objects.filter(booking_id=booking_id).update(status_id=4)
+
+    # return to previous page
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+def get_active_bookings(check_in_date, check_out_date):
+    return Booking.objects.filter(
+        (Q(check_in__range=(check_in_date, check_out_date)) | Q(check_out__range=(check_in_date, check_out_date))) & Q(
+            booking_status_id__in=[1, 3]))
