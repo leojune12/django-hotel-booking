@@ -261,7 +261,7 @@
             check_out_date: "{{ check_out }}",
             number_of_nights: "{{ number_of_nights }}",
             selectedRoomTypes: [
-                {% for room_type in room_types %}
+                {% for room_type in selected_room_types %}
                     {{ room_type|safe }},
                 {% endfor %}
 
@@ -284,6 +284,7 @@
         },
 
         computed: {
+            //get total payment
             total_payment() {
                 let total = 0
                 for (type of this.selectedRoomTypes) {

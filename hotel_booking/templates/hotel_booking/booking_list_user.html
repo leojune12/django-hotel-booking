@@ -55,7 +55,7 @@
                                 <td class="text-nowrap">{{ booking.check_in }}</td>
                                 <td class="text-nowrap">
                                     {{ booking.check_out }}<br>
-                                    {{ booking.length_of_stay }}-night stay
+                                    {{ booking.length_of_stay }}-night{% if booking.length_of_stay > 1 %}s{% endif %}
                                 </td>
                                 <td class="text-nowrap">{{ booking.persons }}</td>
                                 <td class="text-nowrap">
