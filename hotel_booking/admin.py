@@ -23,6 +23,7 @@ class RoomAdmin(admin.ModelAdmin):
 
 class CardTypeAdmin(admin.ModelAdmin):
     fields = ['type']
+    list_display = ('id', 'type')
 
 class CardAdmin(admin.ModelAdmin):
     fields = ['payment', 'type', 'holder', 'number', 'expiry_date']

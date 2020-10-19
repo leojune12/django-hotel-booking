@@ -1,5 +1,7 @@
 from django.contrib.auth import login, logout, authenticate
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
+
 from hotel_booking.forms import SignUpForm
 from django.contrib.auth.decorators import login_required, permission_required
 from hotel_booking.models import Hotel, Booking, BookingStatus, Room, RoomType, CardType, Payment, Card
@@ -12,6 +14,7 @@ from django.db.models import Q
 import datetime
 import string
 import random
+
 
 def signup(request):
     if request.method == 'POST':
@@ -27,16 +30,20 @@ def signup(request):
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
 
+
 def index(request):
     hotel = Hotel.objects.get(id=1)
     return render(request, 'hotel_booking/home.html', {'hotel': hotel})
+
 
 def logout_view(request):
     logout(request)
     return redirect('index')
 
+
 def invalid_data_input(request):
     return render(request, 'hotel_booking/error/invalid_data.html')
+
 
 @login_required
 def booking_search(request):
@@ -46,11 +53,12 @@ def booking_search(request):
     check_in_date = request.GET['check_in_date']
     check_out_date = request.GET['check_out_date']
 
+    # redirect to error page if input dates are invalid
+    if not valid_input_string_dates(check_in_date, check_out_date):
+        return redirect('invalid-data-input')
+
     # get total number of nights
     number_of_nights = get_number_of_nights(check_in_date, check_out_date)
-    # return error page if dates are invalid
-    if valid_input_string_dates(check_in_date, check_out_date):
-        return redirect('invalid-data-input')
 
     # get active bookings
     active_bookings = get_active_bookings(check_in_date, check_out_date)
@@ -85,13 +93,10 @@ def booking_search(request):
     })
 
 
+@require_POST
 @login_required
 def booking_details(request):
     hotel = Hotel.objects.get(id=1)
-
-    # if no post data, return to home page
-    if request.method == 'GET':
-        return redirect('index')
 
     check_in_date = request.POST['check_in_date']
     check_out_date = request.POST['check_out_date']
@@ -126,8 +131,10 @@ def booking_details(request):
         'card_types': card_types,
     })
 
+
 @login_required
-def booking_confirm(request):
+@require_POST
+def booking_create(request):
     # get all post data
     first_name = request.POST['first_name']
     last_name = request.POST['last_name']
@@ -141,11 +148,11 @@ def booking_confirm(request):
     persons = request.POST['persons']
     check_in = request.POST['check_in_date']
     check_out = request.POST['check_out_date']
-    number_of_nights = request.POST['number_of_nights']
     room_type_ids = request.POST['room_type_ids']
     selected_room_type_counts = request.POST['selected_room_type_counts']
-
     selected_room_types = []
+
+    number_of_nights = get_number_of_nights(check_in, check_out)
 
     # get selected room types and add to list
     i = 0
@@ -163,12 +170,11 @@ def booking_confirm(request):
         total_payment += room_type['rate'] * room_type['selected_rooms_count'] * int(number_of_nights)
 
     # generate 8 random characters
-    reference_number = ''.join(random.choices(string.ascii_uppercase+string.digits, k=8))
-    transaction_number = ''.join(random.choices(string.ascii_uppercase+string.digits, k=8))
+    random_number = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
     # convert string data to date instance
-    check_in_date = date(int(check_in.split("-")[0]), int(check_in.split("-")[1]), int(check_in.split("-")[2]))
-    check_out_date = date(int(check_out.split("-")[0]), int(check_out.split("-")[1]), int(check_out.split("-")[2]))
+    check_in_date = convert_string_to_date(check_in)
+    check_out_date = convert_string_to_date(check_out)
 
     # storage for id's of occupied rooms
     occupied_room_ids = []
@@ -196,8 +202,8 @@ def booking_confirm(request):
     # create booking object
     booking = Booking.objects.create(
         user=request.user,
-        reference_number=reference_number,
-        booking_status_id=1,
+        reference_number=random_number,
+        booking_status=BookingStatus.objects.get(status='Confirmed'),
         check_in=check_in_date,
         check_out=check_out_date,
         persons=persons,
@@ -209,7 +215,7 @@ def booking_confirm(request):
 
     # create payment object
     payment = Payment.objects.create(
-        transaction_number=transaction_number,
+        transaction_number=random_number,
         booking=booking,
         status_id=2,
         first_name=first_name,
@@ -231,6 +237,7 @@ def booking_confirm(request):
     request.session['booking_message'] = "Booking created successfully"
 
     return redirect('booking-list')
+
 
 @login_required
 def booking_list(request):
@@ -267,7 +274,7 @@ def booking_list(request):
             'persons': booking.persons,
             'created_at': booking.created_at,
             'rooms_included': room_type_counts,
-            'booking_status': booking.booking_status,
+            'booking_status': booking.booking_status.__str__(),
             'booking_status_id': booking.booking_status_id,
             'total_amount': booking.payment.amount
         }
@@ -282,16 +289,16 @@ def booking_list(request):
 
         return render(request, 'hotel_booking/booking_list_user.html', {
             'booking_message': message,
-            'bookings': bookings,
             'bookings_lists': bookings_lists
         })
     else:
         return render(request, 'hotel_booking/booking_list_user.html', {
-            'bookings': bookings,
             'bookings_lists': bookings_lists
         })
 
+
 @login_required
+@require_POST
 def booking_cancel(request):
     booking_id = request.POST['booking_id']
 
@@ -305,10 +312,13 @@ def booking_cancel(request):
 
     return redirect('booking-list')
 
+
 @login_required
-# add guard(admin only)
-@permission_required('hotel_booking.can_add_hotel', raise_exception=True)
 def booking_list_admin(request):
+    # add guard(admin only)
+    if not is_admin(request.user):
+        return HttpResponse(status=403)
+
     bookings = Booking.objects.all().order_by('-created_at')
 
     # storage for list of bookings
@@ -364,6 +374,7 @@ def booking_list_admin(request):
             'bookings_lists': bookings_list
         })
 
+
 @login_required()
 @permission_required('hotel_booking.can_add_hotel', raise_exception=True)
 def booking_show(request, booking_id):
@@ -395,10 +406,10 @@ def booking_show(request, booking_id):
         'nights_of_stay': number_of_nights
     })
 
+
 @login_required()
 @permission_required('hotel_booking.can_add_hotel', raise_exception=True)
 def booking_show_check_in(request, booking_id):
-
     # update objects(Booking and Payment status)
     Booking.objects.filter(pk=booking_id).update(booking_status_id=3)
 
@@ -407,20 +418,20 @@ def booking_show_check_in(request, booking_id):
     # return to previous page
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
+
 @login_required()
 @permission_required('hotel_booking.can_add_hotel', raise_exception=True)
 def booking_show_check_out(request, booking_id):
-
     # update objects(Booking status)
     Booking.objects.filter(pk=booking_id).update(booking_status_id=4)
 
     # return to previous page
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
+
 @login_required()
 @permission_required('hotel_booking.can_add_hotel', raise_exception=True)
 def booking_show_no_show(request, booking_id):
-
     # update objects(Booking and Payment status)
     Booking.objects.filter(pk=booking_id).update(booking_status_id=5)
 
@@ -429,28 +440,35 @@ def booking_show_no_show(request, booking_id):
     # return to previous page
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
+
 def get_active_bookings(string_check_in, string_check_out):
     # get only bookings with booking_status_id 1 or 3(active)
-    return Booking.objects.filter(
-    (Q(check_in__range=(string_check_in, string_check_out)) | Q(check_out__range=(string_check_in, string_check_out))) & Q(
+    return Booking.objects.filter((Q(check_in__range=(string_check_in, string_check_out)) | Q(
+        check_out__range=(string_check_in, string_check_out))) & Q(
         booking_status_id__in=[1, 3]))
+
 
 def get_number_of_nights(string_check_in, string_check_out):
     check_in_date = convert_string_to_date(string_check_in)
     check_out_date = convert_string_to_date(string_check_out)
-    nights = check_out_date - check_in_date
-    return nights.days
+    count = check_out_date - check_in_date
+    return count.days
+
 
 def convert_string_to_date(string_date):
     return date(int(string_date.split("-")[0]), int(string_date.split("-")[1]), int(string_date.split("-")[2]))
 
-def valid_input_string_dates(string_check_in, string_check_out):
 
+def valid_input_string_dates(string_check_in, string_check_out):
     check_in_date = convert_string_to_date(string_check_in)
     check_out_date = convert_string_to_date(string_check_out)
-    # check-out must be greated than check-in
+    # check-out must be greater than check-in
     # or check-in must be today or onwards
-    if check_out_date <= check_in_date or check_in_date < date(datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day):
-        return True
-    else:
+    if check_out_date <= check_in_date or check_in_date < date.today():
         return False
+    else:
+        return True
+
+
+def is_admin(user):
+    return user.is_superuser

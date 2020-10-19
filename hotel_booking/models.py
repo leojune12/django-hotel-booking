@@ -52,7 +52,7 @@ class Booking(models.Model):
     )
     reference_number = models.CharField(
         max_length=8,
-        default="00000000"
+        default="00000000",
     )
     booking_status = models.ForeignKey(
         BookingStatus,

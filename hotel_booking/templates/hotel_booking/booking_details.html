@@ -236,9 +236,8 @@
                     <input type="hidden" name="check_in_date" :value="check_in_date">
                     <input type="hidden" name="check_out_date" :value="check_out_date">
                     <input type="hidden" name="selected_room_types" :value="selectedRoomTypes">
-                    <input type="hidden" name="number_of_nights" :value="number_of_nights">
                     <input type="hidden" name="room_type_ids" :value="hidden_values_ids">
-                            <input type="hidden" name="selected_room_type_counts" :value="hidden_values_counts">
+                    <input type="hidden" name="selected_room_type_counts" :value="hidden_values_counts">
                     <v-btn x-large color="green darken-1" class="mb-3 px-12 ml-auto" dark :block="!$vuetify.breakpoint.mdAndUp" @click="validate">Confirm Booking</v-btn>
                 </div>
             </v-form>
