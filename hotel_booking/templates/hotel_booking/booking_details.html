@@ -153,7 +153,7 @@
                                 md="6"
                             >
                                 <label for="" class="mb-0" id="persons_label">Number of persons</label>
-                                <select class="form-control form-control-sm" id="persons" name="persons" required>
+                                <select class="custom-select custom-select-sm" id="persons" name="persons" required>
                                     <option v-for="n in 30" :value="[[ n ]]">[[ n ]]</option>
                                 </select>
                             </v-col>
@@ -182,8 +182,8 @@
                                 cols="12"
                                 md="6"
                             >
-                                <label for="" class="mb-0" id="card_type_label">Card Type</label>
-                                <select class="form-control form-control-sm" id="card_type" name="card_type" required>
+                                <label for="" class="mb-0">Card Type</label> <label for="required" class="text-danger d-none" id="card_type_required">(required)</label>
+                                <select class="custom-select custom-select-sm" id="card_type" name="card_type" required>
                                     <option value="0">Select Card</option>
                                     <option v-for="type in cardTypes" :key="type.id" :value="type.id">[[ type.type ]]</option>
                                 </select>
@@ -206,9 +206,9 @@
                                 cols="12"
                                 md="6"
                             >
-                                <label for="" class="mb-0" id="expiry_date_label">Expiry Date</label>
+                                <label for="" class="mb-0">Expiry Date</label> <label for="required" class="text-danger d-none" id="expiry_date_required">(required)</label>
                                 <div class="d-flex">
-                                    <select class="form-control form-control-sm mr-3" id="expiry_month" name="expiry_month" required>
+                                    <select class="custom-select custom-select-sm mr-3" id="expiry_month" name="expiry_month" required>
                                         <option value="0">Month</option>
                                         <option value="1">January</option>
                                         <option value="2">February</option>
@@ -223,7 +223,7 @@
                                         <option value="11">November</option>
                                         <option value="12">December</option>
                                     </select>
-                                    <select class="form-control form-control-sm" id="expiry_year" name="expiry_year" required>
+                                    <select class="custom-select custom-select-sm" id="expiry_year" name="expiry_year" required>
                                         <option value="0">Year</option>
                                         <option v-for="n in 31" :value="[[ 2019 + n ]]">[[ 2019 + n ]]</option>
                                     </select>
@@ -277,7 +277,7 @@
             ],
             cardRules: [
                 v => !!v || 'This field is required',
-                v => (v && v.length <= 16) || 'This field must not more than 16 characters',
+                v => (v && v.length == 16) || 'This field must be 16 characters long',
             ],
             valid: true,
         },
@@ -332,7 +332,7 @@
         methods: {
             validate () {
                 if (this.$refs.form.validate()) {
-                    document.getElementById('card_type_label').classList.remove("text-danger")
+                    {% comment %}document.getElementById('card_type_label').classList.remove("text-danger")
                     document.getElementById('expiry_date_label').classList.remove("text-danger")
                     if (document.getElementById('card_type').value === "0") {
                         document.getElementById('card_type_label').classList.add("text-danger")
@@ -342,6 +342,19 @@
                         document.getElementById('expiry_date_label').classList.add("text-danger")
                     } else {
                         document.getElementById('form').submit()
+                    }{% endcomment %}
+                    document.getElementById('card_type_required').classList.add("d-none")
+                    document.getElementById('expiry_date_required').classList.add("d-none")
+                    if (document.getElementById('card_type').value === "0") {
+                        document.getElementById('card_type_required').classList.remove("d-none")
+                    } else if (document.getElementById('expiry_month').value === "0"){
+                        document.getElementById('expiry_date_required').classList.remove("d-none")
+                    } else if (document.getElementById('expiry_year').value === "0") {
+                        document.getElementById('expiry_date_required').classList.remove("d-none")
+                    } else {
+                        if (confirm("Are you sure?")) {
+                            document.getElementById('form').submit()
+                        }
                     }
                 }
             },

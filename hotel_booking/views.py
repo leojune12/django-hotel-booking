@@ -1,19 +1,15 @@
 from django.contrib.auth import login, logout, authenticate
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-
 from hotel_booking.forms import SignUpForm
 from django.contrib.auth.decorators import login_required, permission_required
 from hotel_booking.models import Hotel, Booking, BookingStatus, Room, RoomType, CardType, Payment, Card
 from django.http import HttpResponseRedirect, HttpResponse
-
-import json
 from datetime import date
-from django.utils import timezone
 from django.db.models import Q
-import datetime
 import string
 import random
+from django.urls import reverse
 
 
 def signup(request):
@@ -32,6 +28,10 @@ def signup(request):
 
 
 def index(request):
+    # redirect if admin
+    if is_admin(request.user):
+        return redirect(reverse('admin-bookings'))
+
     hotel = Hotel.objects.get(id=1)
     return render(request, 'hotel_booking/home.html', {'hotel': hotel})
 
@@ -47,6 +47,10 @@ def invalid_data_input(request):
 
 @login_required
 def booking_search(request):
+    # redirect if admin
+    if is_admin(request.user):
+        return redirect(reverse('admin-bookings'))
+
     # get hotel instance
     hotel = Hotel.objects.get(id=1)
 

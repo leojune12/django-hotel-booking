@@ -8,7 +8,11 @@
         >
             <v-card>
                 <v-card-title style="background-color: #C5CAE9">
-                    Booking Information
+                    <v-btn
+                        icon
+                        class="px-0"
+                        href="{% url 'admin-bookings' %}"
+                    ><v-icon>mdi-arrow-left</v-icon></v-btn>&nbsp;Booking Information
                 </v-card-title>
                 <v-card-text>
                     <v-row>
@@ -161,18 +165,6 @@
                 </v-card-text>
                 <v-card-actions class="px-4 pb-4 pt-0">
                     <v-spacer></v-spacer>
-                    <v-btn
-                        color="red"
-                        dark
-                        href="{% url 'admin-bookings' %}"
-                        text
-                        class="mr-2"
-                    >
-                        <v-icon>
-                            mdi-arrow-left
-                        </v-icon>
-                        Return to list
-                    </v-btn>
                     {% if booking.booking_status_id == 1 %}
                     <v-dialog
                         v-model="dialog_no_show"

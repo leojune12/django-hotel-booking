@@ -12,7 +12,11 @@
 
     <v-card>
         <v-card-title>
-            Bookings list
+            <v-btn
+                icon
+                class="px-0"
+                href="{% url 'index' %}"
+            ><v-icon>mdi-arrow-left</v-icon></v-btn>&nbsp; Booking list
         </v-card-title>
         <v-card-text>
             <v-simple-table class="border">
