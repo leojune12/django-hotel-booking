@@ -245,6 +245,10 @@ def booking_create(request):
 
 @login_required
 def booking_list(request):
+    # redirect if admin
+    if is_admin(request.user):
+        return redirect(reverse('admin-bookings'))
+
     bookings = Booking.objects.filter(user=request.user).order_by('-created_at')
 
     # storage for list of bookings

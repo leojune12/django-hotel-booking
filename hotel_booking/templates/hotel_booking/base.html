@@ -74,7 +74,7 @@
                         Login
                     </a>
                 {% else %}
-                    {% if perms.hotel_booking.can_add_hotel %}
+                    {% if user.is_superuser %}
                         <a href="{% url 'admin-bookings' %}" class="text-white pa-2">
                             Bookings
                         </a>

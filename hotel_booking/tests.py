@@ -1,4 +1,4 @@
-from django.test import TestCase, override_settings, Client
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
 from hotel_booking.models import Hotel, Booking, BookingStatus, Room, RoomType, CardType, Payment, Card, PaymentStatus
@@ -23,9 +23,22 @@ class RoutesTest(TestCase):
         test_user1 = User.objects.create_user(username='testuser1', password='pw@12345')
         test_user2 = User.objects.create_user(username='testuser2', password='pw@12345')
 
-    def test_home_page(self):
+    def test_home_page_for_anonymous(self):
         response = self.client.get(reverse('index'))
         self.assertEqual(response.status_code, 200)
+
+    def test_home_page_for_user(self):
+        username = 'testuser1'
+        login = self.client.login(username=username, password='pw@12345')
+        response = self.client.get(reverse('index'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_home_page_for_admin(self):
+        username = 'admin'
+        login = self.client.login(username=username, password='pw@12345')
+        response = self.client.get(reverse('index'))
+        self.assertEqual(response.url, reverse('admin-bookings'))
+        self.assertEqual(response.status_code, 302)
 
     def test_login_page(self):
         response = self.client.get(reverse('login'))
@@ -69,47 +82,80 @@ class RoutesTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_redirect_to_login_from_booking_search_page_if_user_not_authenticated(self):
-        response = self.client.get('/hotel-booking/booking/search/?check_in_date=2020-10-13&check_out_date=2020-10-14')
-        self.assertRedirects(response, '/hotel-booking/login/?next=/hotel-booking/booking/search/%3Fcheck_in_date%3D2020-10-13%26check_out_date%3D2020-10-14')
+        response = self.client.get('/hotel-booking/booking/search/?check_in_date=2020-11-13&check_out_date=2020-11-14')
+        # check the redirect url
+        self.assertRedirects(response, '/hotel-booking/login/?next=/hotel-booking/booking/search/%3Fcheck_in_date%3D2020-11-13%26check_out_date%3D2020-11-14')
 
-    def test_redirect_to_login_from_booking_details_page_if_user_not_authenticated(self):
-        response = self.client.get('/hotel-booking/booking/details/')
-        # return method not allowed status code(405)
-        self.assertEqual(response.status_code, 405)
+    def test_booking_search_page_if_user_is_not_admin_invalid_input(self):
+        username = 'testuser1'
+        login = self.client.login(username=username, password='pw@12345')
+        # check-in date == check-out date
+        response1 = self.client.get('/hotel-booking/booking/search/?check_in_date=2020-11-13&check_out_date=2020-11-13')
+        # check the redirect url
+        self.assertRedirects(response1, reverse('invalid-data-input'))
+
+    def test_booking_search_page_if_user_is_not_admin(self):
+        username = 'testuser1'
+        login = self.client.login(username=username, password='pw@12345')
+
+        response = self.client.get('/hotel-booking/booking/search/?check_in_date=2020-11-13&check_out_date=2020-11-14')
+        # check the status code
+        self.assertEqual(response.status_code, 200)
+
+    def test_booking_search_page_if_user_is_admin(self):
+        username = 'admin'
+        login = self.client.login(username=username, password='pw@12345')
+
+        response = self.client.get('/hotel-booking/booking/search/?check_in_date=2020-10-13&check_out_date=2020-10-14')
+        # check the redirect url
+        self.assertEqual(response.url, reverse('admin-bookings'))
+        self.assertEqual(response.status_code, 302)
 
     def test_405_response_from_booking_details_if_accessed_through_get_method(self):
         response = self.client.get('/hotel-booking/booking/details/')
+        # return method not allowed status code(405)
         self.assertEqual(response.status_code, 405)
 
     def test_redirect_to_login_from_booking_list_if_user_not_authenticated(self):
         response = self.client.get('/hotel-booking/booking/list/')
         self.assertRedirects(response, '/hotel-booking/login/?next=/hotel-booking/booking/list/')
 
-    def test_continue_to_booking_list_if_user_is_authenticated(self):
+    def test_continue_to_booking_list_if_user_is_not_admin(self):
         username = 'testuser1'
         login = self.client.login(username=username, password='pw@12345')
+
         response = self.client.get(reverse('booking-list'))
         self.assertEqual(response.status_code, 200)
-        # not a redirect status code
-        self.assertFalse(response.status_code == 302)
+
+    def test_redirect_from_booking_list_to_admin_booking_if_user_is_admin(self):
+        username = 'admin'
+        login = self.client.login(username=username, password='pw@12345')
+
+        response = self.client.get(reverse('booking-list'))
+        # redirect if user is admin
+        self.assertRedirects(response, reverse('admin-bookings'))
+        self.assertEqual(response.status_code, 302)
 
     def test_redirect_to_login_from_admin_bookings_if_user_is_not_authenticated(self):
         response = self.client.get('/hotel-booking/admin/bookings/')
+        # check redirect url
         self.assertRedirects(response, '/hotel-booking/login/?next=/hotel-booking/admin/bookings/')
+        self.assertEqual(response.status_code, 302)
 
     def test_403_response_from_admin_bookings_if_user_is_not_authorized(self):
         username = 'testuser1'
         login = self.client.login(username=username, password='pw@12345')
+
         response = self.client.get('/hotel-booking/admin/bookings/')
+        # return unauthorized status(403)
         self.assertEqual(response.status_code, 403)
 
     def test_continue_to_admin_bookings_if_user_is_authorized(self):
         username = 'admin'
         login = self.client.login(username=username, password='pw@12345')
+
         response = self.client.get('/hotel-booking/admin/bookings/')
         self.assertEqual(response.status_code, 200)
-        # not a redirect status code
-        self.assertFalse(response.status_code == 302)
 
 
 class ViewsTest(TestCase):
@@ -288,26 +334,6 @@ class ViewsTest(TestCase):
         )
 
         return booking
-
-    def test_is_admin_is_true(self):
-        username = 'admin'
-        login = self.client.login(username=username, password='pw@12345')
-        response = self.client.get(reverse('index'))
-        # Check user is logged in
-        user = response.context['user']
-        self.assertEqual(user.is_superuser, True)
-        # Check that we got a response "success"
-        self.assertEqual(response.status_code, 200)
-
-    def test_is_admin_is_false(self):
-        username = 'testuser1'
-        login = self.client.login(username=username, password='pw@12345')
-        response = self.client.get(reverse('index'))
-        # Check user is logged in
-        user = response.context['user']
-        self.assertFalse(user.is_superuser, False)
-        # Check that we got a response "success"
-        self.assertEqual(response.status_code, 200)
 
     def test_booking_search(self):
         username = 'testuser1'
